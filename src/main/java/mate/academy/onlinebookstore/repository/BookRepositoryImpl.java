@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import mate.academy.onlinebookstore.exception.DataProcessingException;
 import mate.academy.onlinebookstore.model.Book;
@@ -44,6 +45,18 @@ public class BookRepositoryImpl implements BookRepository {
             return entityManager.createQuery("from Book", Book.class).getResultList();
         } catch (Exception e) {
             throw new DataProcessingException("Can't find all books", e);
+        }
+    }
+
+    @Override
+    public Optional<Book> findById(long id) {
+        try (EntityManager entityManager = entityManagerFactory.createEntityManager()) {
+            return Optional.ofNullable(entityManager
+                    .createQuery("from Book where id = :id", Book.class)
+                    .setParameter("id", id)
+                    .getSingleResult());
+        } catch (Exception e) {
+            throw new DataProcessingException("Can't get book by id: " + id, e);
         }
     }
 }
