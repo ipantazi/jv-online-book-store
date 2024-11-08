@@ -15,7 +15,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Book {
-    @Column(nullable = false)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
