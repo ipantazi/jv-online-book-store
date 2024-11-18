@@ -9,9 +9,13 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Entity
 @Table(name = "books")
+@SQLDelete(sql = "UPDATE books SET is_deleted = true WHERE id=?")
+@Where(clause = "is_deleted=false")
 @Getter
 @Setter
 public class Book {
@@ -34,6 +38,9 @@ public class Book {
     @Column(nullable = false)
     private String description;
 
-    @Column(length = 2048, nullable = false)
+    @Column(name = "cover_image", nullable = false)
     private String coverImage;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted = false;
 }

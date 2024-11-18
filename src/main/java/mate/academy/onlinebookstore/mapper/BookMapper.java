@@ -12,5 +12,6 @@ public interface BookMapper {
     BookDto toBookDto(Book book);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
     Book toModel(CreateBookRequestDto bookRequestDto);
 }
