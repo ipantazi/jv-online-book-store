@@ -1,15 +1,18 @@
-package mate.academy.onlinebookstore.service;
+package mate.academy.onlinebookstore.service.book;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import mate.academy.onlinebookstore.dto.BookDto;
-import mate.academy.onlinebookstore.dto.BookSearchParametersDto;
-import mate.academy.onlinebookstore.dto.CreateBookRequestDto;
+import mate.academy.onlinebookstore.dto.book.BookDto;
+import mate.academy.onlinebookstore.dto.book.BookSearchParametersDto;
+import mate.academy.onlinebookstore.dto.book.CreateBookRequestDto;
+import mate.academy.onlinebookstore.exception.DataProcessingException;
 import mate.academy.onlinebookstore.exception.EntityNotFoundException;
 import mate.academy.onlinebookstore.mapper.BookMapper;
 import mate.academy.onlinebookstore.model.Book;
 import mate.academy.onlinebookstore.repository.SpecificationBuilder;
 import mate.academy.onlinebookstore.repository.book.BookRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -23,21 +26,30 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDto save(CreateBookRequestDto bookRequestDto) {
+        Optional<Book> existingBook = bookRepository.findByIsbnIncludingDeleted(
+                bookRequestDto.isbn());
+        if (existingBook.isPresent()) {
+            Book book = existingBook.get();
+            if (book.isDeleted()) {
+                throw new DataProcessingException("Can't save book. A book with this ISBN: "
+                        + bookRequestDto.isbn() + " already exists but is marked as deleted.");
+            }
+            throw new DataProcessingException("Can't save book. A book with this ISBN: "
+                    + bookRequestDto.isbn() + " already exists in the database.");
+        }
         Book book = bookMapper.toModel(bookRequestDto);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
 
     @Override
-    public List<BookDto> findAll(Pageable pageable) {
-        return bookRepository.findAll(pageable).stream()
-                .map(bookMapper::toBookDto)
-                .toList();
+    public Page<BookDto> findAll(Pageable pageable) {
+        return bookRepository.findAll(pageable).map(bookMapper::toBookDto);
     }
 
     @Override
-    public List<BookDto> search(BookSearchParametersDto params) {
+    public List<BookDto> search(BookSearchParametersDto params, Pageable pageable) {
         Specification<Book> bookSpecification = specificationBuilder.build(params);
-        return bookRepository.findAll(bookSpecification).stream()
+        return bookRepository.findAll(bookSpecification, pageable).stream()
                 .map(bookMapper::toBookDto)
                 .toList();
     }

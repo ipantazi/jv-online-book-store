@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
-      id: create-books-table
+      id: create-users-table
       author: mateacademy
       changes:
         - createTable:
-            tableName: books
+            tableName: users
             columns:
               - column:
                   name: id
@@ -14,33 +14,26 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: title
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: author
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: isbn
+                  name: email
                   type: varchar(255)
                   constraints:
                     unique: true
                     nullable: false
               - column:
-                  name: price
-                  type: decimal
+                  name: password
+                  type: varchar(255)
                   constraints:
                     nullable: false
               - column:
-                  name: description
+                  name: first_name
                   type: varchar(255)
+                  constraints:
+                    nullable: false
               - column:
-                  name: cover_image
+                  name: last_name
                   type: varchar(255)
+                  constraints:
+                    nullable: false
               - column:
-                  name: is_deleted
-                  type: bit
-                  defaultValueBoolean: false
+                  name: shipping_address
+                  type: varchar(255)

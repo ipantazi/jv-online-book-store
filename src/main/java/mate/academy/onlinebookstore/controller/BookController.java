@@ -5,12 +5,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import mate.academy.onlinebookstore.dto.BookDto;
-import mate.academy.onlinebookstore.dto.BookSearchParametersDto;
-import mate.academy.onlinebookstore.dto.CreateBookRequestDto;
-import mate.academy.onlinebookstore.service.BookService;
+import mate.academy.onlinebookstore.dto.book.BookDto;
+import mate.academy.onlinebookstore.dto.book.BookSearchParametersDto;
+import mate.academy.onlinebookstore.dto.book.CreateBookRequestDto;
+import mate.academy.onlinebookstore.service.book.BookService;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,24 +23,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @Tag(name = "Book management", description = "Endpoints of managing books")
 @RestController
-@RequestMapping("/books")
+@RequestMapping(value = "/books", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class BookController {
     private final BookService bookService;
 
     @GetMapping
     @Operation(summary = "Get all books", description = "Get a list of all available books")
-    public List<BookDto> getAll(Pageable pageable) {
+    public Page<BookDto> getAll(@ParameterObject Pageable pageable) {
         return bookService.findAll(pageable);
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search books", description = "Get a list of books by given parameters")
-    public List<BookDto> searchBooks(@Valid BookSearchParametersDto searchParameters) {
-        return bookService.search(searchParameters);
+    public List<BookDto> searchBooks(@Valid BookSearchParametersDto searchParameters,
+                                     @ParameterObject Pageable pageable) {
+        List<BookDto> searchedBooks = bookService.search(searchParameters, pageable);
+        if (searchedBooks.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found");
+        }
+        return searchedBooks;
     }
 
     @GetMapping("/{id}")
