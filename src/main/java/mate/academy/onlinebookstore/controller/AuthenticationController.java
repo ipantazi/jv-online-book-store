@@ -8,14 +8,13 @@ import mate.academy.onlinebookstore.dto.user.UserRegistrationRequestDto;
 import mate.academy.onlinebookstore.dto.user.UserResponseDto;
 import mate.academy.onlinebookstore.exception.RegistrationException;
 import mate.academy.onlinebookstore.service.user.UserService;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "User management", description = "Endpoints of management users.")
-@RequestMapping(value = "/api/auth", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping("/auth")
 @RestController
 @RequiredArgsConstructor
 public class AuthenticationController {

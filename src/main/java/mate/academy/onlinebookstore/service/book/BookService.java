@@ -12,7 +12,7 @@ public interface BookService {
 
     Page<BookDto> findAll(Pageable pageable);
 
-    List<BookDto> search(BookSearchParametersDto params, Pageable pageable);
+    List<BookDto> search(BookSearchParametersDto params);
 
     BookDto findById(Long id);
 

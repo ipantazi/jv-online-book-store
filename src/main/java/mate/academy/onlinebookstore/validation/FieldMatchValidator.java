@@ -3,6 +3,7 @@ package mate.academy.onlinebookstore.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Field;
+import java.util.Objects;
 
 public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Object> {
     private String field;
@@ -28,8 +29,7 @@ public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Obje
             Object firstValue = firstField.get(value);
             Object secondValue = secondField.get(value);
 
-            boolean isValid = (firstValue == null && secondValue == null)
-                    || (firstValue != null && firstValue.equals(secondValue));
+            boolean isValid = Objects.equals(firstValue, secondValue);
 
             if (!isValid) {
                 context.disableDefaultConstraintViolation();
