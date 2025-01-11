@@ -25,6 +25,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: salt
+                  type: VARBINARY(16)
+                  constraints:
+                    nullable: false
+              - column:
                   name: first_name
                   type: varchar(255)
                   constraints:
