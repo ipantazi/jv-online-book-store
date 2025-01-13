@@ -20,7 +20,7 @@ public record CreateBookRequestDto(
 
         @NotBlank(message = "Invalid ISBN. ISBN should not be blank.")
         @Size(max = 17, message = "ISBN must not exceed 17 characters (digits and dashes).")
-        @Pattern(regexp = "^(?=(?:\\d){10}$|(?:\\D*\\d){13}$)[\\d-]+$",
+        @Pattern(regexp = "^(?=\\d{10}$|(?:\\D*\\d){13}$)[\\d-]+$",
                 message = "Invalid ISBN format. "
                         + "ISBN must contain exactly 10 or 13 digits, with optional dashes.")
         String isbn,
