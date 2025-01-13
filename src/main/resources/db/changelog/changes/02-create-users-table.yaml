@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: create-users-table
-      author: mateacademy
+      author: Illya Pantazi
       changes:
         - createTable:
             tableName: users

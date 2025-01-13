@@ -1,12 +1,12 @@
-package mate.academy.onlinebookstore.service.user;
+package onlinebookstore.service.user;
 
 import lombok.RequiredArgsConstructor;
-import mate.academy.onlinebookstore.dto.user.UserRegistrationRequestDto;
-import mate.academy.onlinebookstore.dto.user.UserResponseDto;
-import mate.academy.onlinebookstore.exception.RegistrationException;
-import mate.academy.onlinebookstore.mapper.UserMapper;
-import mate.academy.onlinebookstore.model.User;
-import mate.academy.onlinebookstore.repository.user.UserRepository;
+import onlinebookstore.dto.user.UserRegistrationRequestDto;
+import onlinebookstore.dto.user.UserResponseDto;
+import onlinebookstore.exception.RegistrationException;
+import onlinebookstore.mapper.UserMapper;
+import onlinebookstore.model.User;
+import onlinebookstore.repository.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +19,8 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto register(UserRegistrationRequestDto requestDto)
             throws RegistrationException {
         if (userRepository.existsByEmail(requestDto.email())) {
-            throw new RegistrationException("Can't register user. Email address already in use");
+            throw new RegistrationException("Can't register user. Email address: "
+                    + requestDto.email() + " already in use");
         }
         User user = userMapper.toModel(requestDto);
         return userMapper.toDto(userRepository.save(user));

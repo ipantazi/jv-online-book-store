@@ -1,23 +1,20 @@
-package mate.academy.onlinebookstore.service.book;
+package onlinebookstore.service.book;
 
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import mate.academy.onlinebookstore.dto.book.BookDto;
-import mate.academy.onlinebookstore.dto.book.BookSearchParametersDto;
-import mate.academy.onlinebookstore.dto.book.CreateBookRequestDto;
-import mate.academy.onlinebookstore.exception.DataProcessingException;
-import mate.academy.onlinebookstore.exception.EntityNotFoundException;
-import mate.academy.onlinebookstore.mapper.BookMapper;
-import mate.academy.onlinebookstore.model.Book;
-import mate.academy.onlinebookstore.repository.SpecificationBuilder;
-import mate.academy.onlinebookstore.repository.book.BookRepository;
+import onlinebookstore.dto.book.BookDto;
+import onlinebookstore.dto.book.BookSearchParametersDto;
+import onlinebookstore.dto.book.CreateBookRequestDto;
+import onlinebookstore.exception.DataProcessingException;
+import onlinebookstore.exception.EntityNotFoundException;
+import onlinebookstore.mapper.BookMapper;
+import onlinebookstore.model.Book;
+import onlinebookstore.repository.SpecificationBuilder;
+import onlinebookstore.repository.book.BookRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,16 +25,9 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDto save(CreateBookRequestDto bookRequestDto) {
-        Optional<Book> existingBook = bookRepository.findByIsbnIncludingDeleted(
-                bookRequestDto.isbn());
-        if (existingBook.isPresent()) {
-            Book book = existingBook.get();
-            if (book.isDeleted()) {
-                throw new DataProcessingException("Can't save book. A book with this ISBN: "
-                        + bookRequestDto.isbn() + " already exists but is marked as deleted.");
-            }
-            throw new DataProcessingException("Can't save book. A book with this ISBN: "
-                    + bookRequestDto.isbn() + " already exists in the database.");
+        if (bookRepository.existsByIsbnIncludingDeleted(bookRequestDto.isbn()) > 0) {
+            throw new DataProcessingException("Can't save a book with this ISBN: "
+                    + bookRequestDto.isbn());
         }
         Book book = bookMapper.toModel(bookRequestDto);
         return bookMapper.toBookDto(bookRepository.save(book));
@@ -51,14 +41,9 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<BookDto> search(BookSearchParametersDto params) {
         Specification<Book> bookSpecification = specificationBuilder.build(params);
-        List<BookDto> searchedBooks = bookRepository.findAll(bookSpecification).stream()
+        return bookRepository.findAll(bookSpecification).stream()
                 .map(bookMapper::toBookDto)
                 .toList();
-        if (searchedBooks.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "No books found based on the given criteria");
-        }
-        return searchedBooks;
     }
 
     @Override

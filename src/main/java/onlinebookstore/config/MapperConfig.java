@@ -1,4 +1,4 @@
-package mate.academy.onlinebookstore.config;
+package onlinebookstore.config;
 
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.NullValueCheckStrategy;
@@ -7,7 +7,7 @@ import org.mapstruct.NullValueCheckStrategy;
         componentModel = "spring",
         injectionStrategy = InjectionStrategy.CONSTRUCTOR,
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-        implementationPackage = "mate.academy.onlinebookstore.mapper.impl"
+        implementationPackage = "<PACKAGE_NAME>.impl"
 )
 public class MapperConfig {
 }
