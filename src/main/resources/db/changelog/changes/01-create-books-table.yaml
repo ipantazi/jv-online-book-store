@@ -15,17 +15,17 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: title
-                  type: varchar(255)
+                  type: varchar(100)
                   constraints:
                     nullable: false
               - column:
                   name: author
-                  type: varchar(255)
+                  type: varchar(50)
                   constraints:
                     nullable: false
               - column:
                   name: isbn
-                  type: varchar(255)
+                  type: varchar(17)
                   constraints:
                     unique: true
                     nullable: false
@@ -36,10 +36,10 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: description
-                  type: varchar(255)
+                  type: varchar(500)
               - column:
                   name: cover_image
-                  type: varchar(255)
+                  type: varchar(1024)
               - column:
                   name: is_deleted
                   type: bit

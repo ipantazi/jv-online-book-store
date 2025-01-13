@@ -22,7 +22,6 @@ public class UserServiceImpl implements UserService {
             throw new RegistrationException("Can't register user. Email address already in use");
         }
         User user = userMapper.toModel(requestDto);
-        userRepository.save(user);
-        return userMapper.toDto(user);
+        return userMapper.toDto(userRepository.save(user));
     }
 }

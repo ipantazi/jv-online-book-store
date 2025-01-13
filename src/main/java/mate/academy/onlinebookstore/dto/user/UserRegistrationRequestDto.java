@@ -12,6 +12,7 @@ import mate.academy.onlinebookstore.validation.FieldMatch;
 )
 public record UserRegistrationRequestDto(
         @Email(message = "Invalid format email.")
+        @Size(max = 50, message = "Email address must not exceed 50 characters.")
         String email,
 
         @NotBlank(message = "Invalid password. Password shouldn't be blank.")

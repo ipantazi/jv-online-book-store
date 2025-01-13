@@ -38,7 +38,7 @@ public class FieldMatchValidator implements ConstraintValidator<FieldMatch, Obje
                         .addConstraintViolation();
             }
             return isValid;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }

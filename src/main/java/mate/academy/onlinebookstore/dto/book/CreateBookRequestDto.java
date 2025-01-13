@@ -18,10 +18,11 @@ public record CreateBookRequestDto(
         @Size(min = 3, max = 50, message = "Invalid author. Size should be between 3 to 50.")
         String author,
 
-        @NotBlank(message = "Invalid isbn. Isbn should not be blank.")
-        @Pattern(regexp = "^(?=(?:\\D*\\d){10}$|(?:\\D*\\d){13}$)[\\d-]+$",
-                message = "Invalid ISBN format. Only digits and dashes. "
-                        + "It must be between 10 and 13 digits.")
+        @NotBlank(message = "Invalid ISBN. ISBN should not be blank.")
+        @Size(max = 17, message = "ISBN must not exceed 17 characters (digits and dashes).")
+        @Pattern(regexp = "^(?=(?:\\d){10}$|(?:\\D*\\d){13}$)[\\d-]+$",
+                message = "Invalid ISBN format. "
+                        + "ISBN must contain exactly 10 or 13 digits, with optional dashes.")
         String isbn,
 
         @NotNull(message = "Invalid price. Please enter price.")
@@ -34,6 +35,7 @@ public record CreateBookRequestDto(
         String description,
 
         @URL(message = "Invalid URL. Please provide a valid UPL of cover image.")
+        @Size(max = 1024, message = "URL must not exceed 1024 characters.")
         String coverImage
 ) {
 }
