@@ -3,3 +3,19 @@ databaseChangeLog:
       file: db/changelog/changes/01-create-books-table.yaml
   - include:
       file: db/changelog/changes/02-create-users-table.yaml
+  - include:
+      file: db/changelog/changes/03-insert-books-part1.yaml
+  - include:
+      file: db/changelog/changes/04-insert-books-part2.yaml
+  - include:
+      file: db/changelog/changes/05-add-is-deleted-to-users.yaml
+  - include:
+      file: db/changelog/changes/06-insert-users.yaml
+  - include:
+      file: db/changelog/changes/07-create-roles-table.yaml
+  - include:
+      file: db/changelog/changes/08-create-users_roles-table.yaml
+  - include:
+      file: db/changelog/changes/09-insert-roles.yaml
+  - include:
+      file: db/changelog/changes/10-assign-role-for-existing-users.yaml

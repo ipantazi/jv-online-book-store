@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-is-deleted-column-to-users-table
+      author: Illia Pantazi
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: is_deleted
+                  type: bit
+                  defaultValueBoolean: false

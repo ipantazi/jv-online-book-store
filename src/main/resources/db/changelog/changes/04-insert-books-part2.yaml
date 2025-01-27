@@ -1,0 +1,110 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-classic-books-to-books-table
+      author: Illia Pantazi
+      changes:
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Pride and Prejudice"
+              - column:
+                  name: author
+                  value: "Jane Austen"
+              - column:
+                  name: isbn
+                  value: "9780141199078"
+              - column:
+                  name: price
+                  value: 18
+              - column:
+                  name: description
+                  value: "Pride and Prejudice is a timeless romance novel exploring themes of love, class, and reputation."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1EiaUedlo3vwgSojtx5H6N90htMCFp5lc/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Moby-Dick"
+              - column:
+                  name: author
+                  value: "Herman Melville"
+              - column:
+                  name: isbn
+                  value: "9780142437247"
+              - column:
+                  name: price
+                  value: 22
+              - column:
+                  name: description
+                  value: "Moby-Dick is a novel about the obsessive quest of Captain Ahab for revenge on the white whale."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1CqEUKqTs8eHJTe7G6g1m-WWEX-qRkIVU/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Don Quixote"
+              - column:
+                  name: author
+                  value: "Miguel de Cervantes"
+              - column:
+                  name: isbn
+                  value: "9780060934347"
+              - column:
+                  name: price
+                  value: 24
+              - column:
+                  name: description
+                  value: "Don Quixote is a comedic yet profound story about an aging knight's idealistic pursuit of chivalry."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1iXBTjLmJzzkSsBeFARWCLMDL6HozvptX/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "The Great Gatsby"
+              - column:
+                  name: author
+                  value: "F. Scott Fitzgerald"
+              - column:
+                  name: isbn
+                  value: "9780743273565"
+              - column:
+                  name: price
+                  value: 20
+              - column:
+                  name: description
+                  value: "The Great Gatsby captures the Jazz Age and explores themes of ambition, love, and the American Dream."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1A7hYNzK1I-BjVdSDU0DAeDFL1UEyQ91d/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Ulysses"
+              - column:
+                  name: author
+                  value: "James Joyce"
+              - column:
+                  name: isbn
+                  value: "9780199535674"
+              - column:
+                  name: price
+                  value: 25
+              - column:
+                  name: description
+                  value: "Ulysses is a groundbreaking modernist novel that parallels the Odyssey in its depiction of one day in Dublin."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1UU6WfYgDlgDcaDoyBSfkhCRz8YmVYS7q/view?usp=sharing"

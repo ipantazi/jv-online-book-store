@@ -19,10 +19,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @ExceptionHandler(HashPasswordException.class)
-    public ResponseEntity<Object> handleHashPasswordException(HashPasswordException ex) {
-        Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    @ExceptionHandler(InvalidRoleException.class)
+    public ResponseEntity<Object> handleInvalidRoleException(InvalidRoleException ex) {
+        Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UserEmailNotFoundException.class)
+    public ResponseEntity<Object> handleUserNotFoundException(UserEmailNotFoundException ex) {
+        Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(RegistrationException.class)

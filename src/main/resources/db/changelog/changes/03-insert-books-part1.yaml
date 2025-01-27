@@ -1,0 +1,257 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-books-to-books-table
+      author: Illia Pantazi
+      changes:
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Macbeth"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780648509370"
+              - column:
+                  name: price
+                  value: 22
+              - column:
+                  name: description
+                  value: "Like other plays, Macbeth speaks to each generation. Its story was once seen as that of a hero who commits an evil act and pays an enormous price."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/15J1uQ7zU-Fcypwoqrzb9IK5BGdtI0WOz/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Hamlet"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780198328704"
+              - column:
+                  name: price
+                  value: 18
+              - column:
+                  name: description
+                  value: "The tragedy of Hamlet, Prince of Denmark, often shortened to Hamlet, is a tragedy written by William Shakespeare sometime between 1599 and 1601."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1andQJUB5vbmFtsC3i_ggQ9caK98y5TG3/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Othello"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199535873"
+              - column:
+                  name: price
+                  value: 20
+              - column:
+                  name: description
+                  value: "The tragedy Othello tells the story of a powerful general whose life and marriage are ruined by unfounded jealousy."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1y67g8C4TBs7-ZiPqv3CE7cAYUONgdoWB/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Romeo and Juliet"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780140714845"
+              - column:
+                  name: price
+                  value: 25
+              - column:
+                  name: description
+                  value: "Romeo and Juliet is a tragedy about two young star-crossed lovers whose deaths ultimately reconcile their feuding families."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/13hh8m7uCVmb8idn7r7VFJcYdSi97R4D6/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "King Lear"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199535828"
+              - column:
+                  name: price
+                  value: 21
+              - column:
+                  name: description
+                  value: "The tragedy King Lear portrays the gradual descent into madness of its title character, after he disposes of his kingdom."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1siO73e9MhgX4a7VUvpIIImHJT-aotrOh/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Julius Caesar"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780743484930"
+              - column:
+                  name: price
+                  value: 15
+              - column:
+                  name: description
+                  value: "The tragedy of Julius Caesar depicts the conspiracy against the Roman dictator, his assassination, and its aftermath."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1GThoy6DLPC4BKTG2sZscxHqyeaHkZPTc/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "The Tempest"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199535903"
+              - column:
+                  name: price
+                  value: 18
+              - column:
+                  name: description
+                  value: "The Tempest is a play about magic, betrayal, love, and forgiveness."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1TIwJQdnu8JKWsa-xDe-gNU4_35HMaPcm/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "A Midsummer Night's Dream"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199535866"
+              - column:
+                  name: price
+                  value: 16
+              - column:
+                  name: description
+                  value: "A Midsummer Night's Dream portrays the adventures of four young lovers and a group of amateur actors in a moonlit forest."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1Mk_KiF77748UgUReozj5yvB1QCzDm1v0/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Much Ado About Nothing"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780141396590"
+              - column:
+                  name: price
+                  value: 17
+              - column:
+                  name: description
+                  value: "Much Ado About Nothing is a comedy that showcases misunderstandings, love, and deception."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/13K09034qISva4MsSO_8QnbQO36LzoQWW/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Twelfth Night"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199536092"
+              - column:
+                  name: price
+                  value: 19
+              - column:
+                  name: description
+                  value: "Twelfth Night explores themes of love and identity in a comedic manner."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1ClrK3r0g-8QKwR53Z4A1nlwkCdN32onV/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Henry V"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199536511"
+              - column:
+                  name: price
+                  value: 22
+              - column:
+                  name: description
+                  value: "Henry V follows the young king's campaign to assert his claim to the French throne."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1c48YODAZJc6Qrf-EvO-tJrEZp7wqcoO6/view?usp=sharing"
+        - insert:
+            tableName: books
+            columns:
+              - column:
+                  name: title
+                  value: "Richard III"
+              - column:
+                  name: author
+                  value: "William Shakespeare"
+              - column:
+                  name: isbn
+                  value: "9780199535880"
+              - column:
+                  name: price
+                  value: 24
+              - column:
+                  name: description
+                  value: "Richard III chronicles the Machiavellian rise to power and short reign of King Richard III of England."
+              - column:
+                  name: cover_image
+                  value: "https://drive.google.com/file/d/1jZgvAexZpxBuEEb8hiCTnAZ5vkV1UzLH/view?usp=sharing"
