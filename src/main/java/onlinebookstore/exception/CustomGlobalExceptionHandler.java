@@ -19,12 +19,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @ExceptionHandler(InvalidRoleException.class)
-    public ResponseEntity<Object> handleInvalidRoleException(InvalidRoleException ex) {
-        Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
     @ExceptionHandler(UserEmailNotFoundException.class)
     public ResponseEntity<Object> handleUserNotFoundException(UserEmailNotFoundException ex) {
         Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.NOT_FOUND);

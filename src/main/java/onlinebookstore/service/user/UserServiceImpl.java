@@ -2,12 +2,10 @@ package onlinebookstore.service.user;
 
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.user.UserRegistrationRequestDto;
 import onlinebookstore.dto.user.UserResponseDto;
-import onlinebookstore.exception.InvalidRoleException;
 import onlinebookstore.exception.RegistrationException;
 import onlinebookstore.mapper.UserMapper;
 import onlinebookstore.model.Role;
@@ -21,6 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     public static final Map<String, Role> rolesCache = new HashMap<>();
+    private static final String DEFAULT_ROLE = "USER";
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -28,11 +27,7 @@ public class UserServiceImpl implements UserService {
 
     @PostConstruct
     public void initializeRolesCache() {
-        List<Role> allRolesFromDb = roleRepository.findAll();
-        if (allRolesFromDb.isEmpty()) {
-            throw new InvalidRoleException("No roles found in the database");
-        }
-        allRolesFromDb.forEach(roleFromDb ->
+        roleRepository.findAll().forEach(roleFromDb ->
                 rolesCache.put(roleFromDb.getAuthority(), roleFromDb));
     }
 
@@ -46,6 +41,7 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toModel(userRegistrationDto);
         user.setPassword(passwordEncoder.encode(userRegistrationDto.password()));
+        user.getRoles().add(rolesCache.get(DEFAULT_ROLE));
 
         return userMapper.toDto(userRepository.save(user));
     }

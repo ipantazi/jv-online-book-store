@@ -2,10 +2,8 @@ package onlinebookstore.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.Set;
 import onlinebookstore.validation.FieldMatch;
 
 @FieldMatch(field = "password",
@@ -42,10 +40,6 @@ public record UserRegistrationRequestDto(
         String lastName,
 
         @Size(max = 255, message = "Shipping address must not exceed 255 characters.")
-        String shippingAddress,
-
-        @NotEmpty(message = "Invalid roles. Roles shouldn't be empty or null.")
-        Set<String> roles
-
+        String shippingAddress
 ) {
 }
