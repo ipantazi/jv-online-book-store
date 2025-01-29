@@ -10,6 +10,9 @@ import org.mapstruct.Mapping;
 @Mapper(config = MapperConfig.class)
 public interface UserMapper {
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "password", ignore = true)
     User toModel(UserRegistrationRequestDto userRegistrationRequestDto);
 
     UserResponseDto toDto(User user);

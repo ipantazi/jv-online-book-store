@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: create-users-table
-      author: Illya Pantazi
+      author: Illia Pantazi
       changes:
         - createTable:
             tableName: users
@@ -21,7 +21,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: password
-                  type: varchar(50)
+                  type: varchar(60)
                   constraints:
                     nullable: false
               - column:

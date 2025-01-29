@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: create-books-table
-      author: Illya Pantazi
+      author: Illia Pantazi
       changes:
         - createTable:
             tableName: books
@@ -44,3 +44,5 @@ databaseChangeLog:
                   name: is_deleted
                   type: bit
                   defaultValueBoolean: false
+                  constraints:
+                    nullable: false

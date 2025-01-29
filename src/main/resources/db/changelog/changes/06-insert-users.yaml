@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-users-to-users-tables
+      author: Illia Pantazi
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "bob@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$nEbHtYvYEZtqUvkrwkWfyel9Lce2QGUOi6A/OIC3F8G9/Hoo9bGX6"
+              - column:
+                  name: first_name
+                  value: "Bob"
+              - column:
+                  name: last_name
+                  value: "Montague"
+              - column:
+                  name: shipping_address
+                  value: "96 Euston Rd, London NW1 2DB, United Kingdom"
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "alice@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$uUzGK9iYi0dnepJG/OgSq.tZxgTkZrDm2cq4kxIi5595cQhA3Xzgi"
+              - column:
+                  name: first_name
+                  value: "Alice"
+              - column:
+                  name: last_name
+                  value: "Capuleti"
+              - column:
+                  name: shipping_address
+                  value: "5 El Shatby, Alexandria, Egypt"
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  value: "john@example.com"
+              - column:
+                  name: password
+                  value: "$2a$10$3hktOq41P484o0LvgP/1h.zBO1X0Qfn5Nh4KQS3sXesML546XoJYe"
+              - column:
+                  name: first_name
+                  value: "John"
+              - column:
+                  name: last_name
+                  value: "Macbeth"
+              - column:
+                  name: shipping_address
+                  value: "476 5th Ave, New York, NY, USA"
