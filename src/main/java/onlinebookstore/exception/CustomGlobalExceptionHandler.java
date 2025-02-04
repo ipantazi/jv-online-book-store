@@ -19,6 +19,12 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleAuthenticationException(AuthenticationException ex) {
+        Map<String, Object> body = bodyBuilder(ex, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(UserEmailNotFoundException.class)
     public ResponseEntity<Object> handleUserNotFoundException(UserEmailNotFoundException ex) {
         Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.NOT_FOUND);
