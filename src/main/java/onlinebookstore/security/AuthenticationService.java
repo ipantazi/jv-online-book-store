@@ -3,28 +3,24 @@ package onlinebookstore.security;
 import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.user.UserLoginRequestDto;
 import onlinebookstore.dto.user.UserLoginResponseDto;
-import onlinebookstore.exception.AuthenticationException;
-import onlinebookstore.model.User;
-import onlinebookstore.repository.user.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
 
     public UserLoginResponseDto authenticate(UserLoginRequestDto requestDto) {
-        User userFromDB = userRepository.findByEmail(requestDto.email())
-                .orElseThrow(() -> new AuthenticationException("Invalid email or password."));
+        final Authentication authentication = authenticationManager
+                .authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                requestDto.email(), requestDto.password()));
+        String token = jwtUtil.generateToken(authentication.getName());
 
-        if (!passwordEncoder.matches(requestDto.password(), userFromDB.getPassword())) {
-            throw new AuthenticationException("Invalid email or password.");
-        }
-
-        String token = jwtUtil.generateToken(userFromDB.getEmail());
         return new UserLoginResponseDto(token);
     }
 }
