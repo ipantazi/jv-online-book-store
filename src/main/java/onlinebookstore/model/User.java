@@ -2,6 +2,7 @@ package onlinebookstore.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,11 +14,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.commons.lang3.builder.EqualsExclude;
-import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.security.core.GrantedAuthority;
@@ -50,10 +50,9 @@ public class User implements UserDetails {
 
     private String shippingAddress;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @ToString.Exclude
-    @HashCodeExclude
-    @EqualsExclude
+    @EqualsAndHashCode.Exclude
     @JoinTable(
             name = "users_roles",
             joinColumns = @JoinColumn(name = "user_id"),

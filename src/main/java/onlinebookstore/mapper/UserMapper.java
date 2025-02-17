@@ -13,7 +13,7 @@ public interface UserMapper {
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "password", ignore = true)
-    User toModel(UserRegistrationRequestDto userRegistrationRequestDto);
+    User toUserEntity(UserRegistrationRequestDto userRegistrationRequestDto);
 
-    UserResponseDto toDto(User user);
+    UserResponseDto toUserDto(User user);
 }

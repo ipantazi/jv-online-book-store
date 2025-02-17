@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: assign-classic-categories-for-existing-books-to-books_categories-table
+      author: Illia Pantazi
+      changes:
+        - sql:
+            dbms: mysql
+            splitStatements: false
+            sql: |
+              INSERT INTO books_categories (book_id, category_id)
+              SELECT b.id, c.id 
+              FROM books b
+              JOIN categories c ON c.name = 'Classic'
+              WHERE b.title IN (
+                'Macbeth', 'Hamlet', 'Othello', 'Romeo and Juliet', 'King Lear', 
+                'Julius Caesar', 'The Tempest', 'A Midsummer Night''s Dream', 
+                'Much Ado About Nothing', 'Twelfth Night', 'Henry V', 'Richard III',
+                'Pride and Prejudice', 'Moby-Dick', 'Don Quixote', 'Miguel de Cervantes',
+                'The Great Gatsby', 'Ulysses'
+              );
+  - changeSet:
+      id: assign-children-categories-for-existing-books-to-books_categories-table
+      author: Illia Pantazi
+      changes:
+        - sql:
+            dbms: mysql
+            splitStatements: false
+            sql: |
+              INSERT INTO books_categories (book_id, category_id)
+              SELECT b.id, c.id 
+              FROM books b
+              JOIN categories c ON c.name = 'Children''s Books'
+              WHERE b.title IN (
+                'Charlotte''s Web', 'Where the Wild Things Are', 'Goodnight Moon'
+                );
+  - changeSet:
+      id: assign-cooking-categories-for-existing-books-to-books_categories-table
+      author: Illia Pantazi
+      changes:
+        - sql:
+            dbms: mysql
+            splitStatements: false
+            sql: |
+              INSERT INTO books_categories (book_id, category_id)
+              SELECT b.id, c.id 
+              FROM books b
+              JOIN categories c ON c.name = 'Cooking'
+              WHERE b.title IN (
+                'Mastering the Art of French Cooking', 'The Joy of Cooking',
+                'Salt, Fat, Acid, Heat: Mastering the Elements of Good Cooking'
+                );

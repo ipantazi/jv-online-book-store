@@ -1,10 +1,14 @@
 package onlinebookstore.service.book;
 
+import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCash;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.book.BookDto;
+import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.dto.book.BookSearchParametersDto;
 import onlinebookstore.dto.book.CreateBookRequestDto;
+import onlinebookstore.exception.CategoryNotFoundException;
 import onlinebookstore.exception.DataProcessingException;
 import onlinebookstore.exception.EntityNotFoundException;
 import onlinebookstore.mapper.BookMapper;
@@ -29,7 +33,8 @@ public class BookServiceImpl implements BookService {
             throw new DataProcessingException("Can't save a book with this ISBN: "
                     + bookRequestDto.isbn());
         }
-        Book book = bookMapper.toModel(bookRequestDto);
+
+        Book book = bookMapper.toBookEntity(bookRequestDto);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
 
@@ -54,13 +59,25 @@ public class BookServiceImpl implements BookService {
     @Override
     public BookDto update(Long id, CreateBookRequestDto bookRequestDto) {
         Book book = findBookById(id);
-        bookMapper.updateBookFromDto(bookRequestDto, book);
+        bookMapper.updateBookEntity(bookRequestDto, book);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
 
     @Override
     public void deleteById(Long id) {
-        bookRepository.deleteById(findBookById(id).getId());
+        if (!bookRepository.existsById(id)) {
+            throw new EntityNotFoundException("Can't delete a book with ID: " + id);
+        }
+        bookRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<BookDtoWithoutCategoryIds> getByCategoryId(Long categoryId, Pageable pageable) {
+        if (!categoriesCash.containsKey(categoryId)) {
+            throw new CategoryNotFoundException("Can't get books with category ID: " + categoryId);
+        }
+        return bookRepository.findAllByCategoryId(categoryId, pageable)
+                .map(bookMapper::toBookDtoWithoutCategories);
     }
 
     private Book findBookById(Long id) {
