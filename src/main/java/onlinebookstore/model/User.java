@@ -2,7 +2,6 @@ package onlinebookstore.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -50,7 +49,7 @@ public class User implements UserDetails {
 
     private String shippingAddress;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JoinTable(

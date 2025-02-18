@@ -22,3 +22,7 @@ databaseChangeLog:
               - column:
                   name: description
                   type: varchar(500)
+              - column:
+                  name: is_deleted
+                  type: bit
+                  defaultValueBoolean: false

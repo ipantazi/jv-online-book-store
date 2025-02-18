@@ -7,7 +7,7 @@ import java.util.Set;
 import onlinebookstore.config.MapperConfig;
 import onlinebookstore.dto.category.CategoryDto;
 import onlinebookstore.dto.category.CreateCategoryRequestDto;
-import onlinebookstore.exception.CategoryNotFoundException;
+import onlinebookstore.exception.EntityNotFoundException;
 import onlinebookstore.model.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -34,7 +34,7 @@ public interface CategoryMapper {
         Set<Category> categories = new HashSet<>();
         for (Long id : categoryIDs) {
             if (!categoriesCash.containsKey(id)) {
-                throw new CategoryNotFoundException("Category with id " + id + " not found");
+                throw new EntityNotFoundException("Category with id " + id + " not found");
             }
             categories.add(categoriesCash.get(id));
         }

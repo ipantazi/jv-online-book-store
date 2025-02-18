@@ -46,14 +46,18 @@ public class CategoryServiceImpl implements CategoryService {
                     + categoryRequestDto.name());
         }
         Category category = categoryMapper.toCategoryEntity(categoryRequestDto);
-        return categoryMapper.toCategoryDto(categoryRepository.save(category));
+        categoryRepository.save(category);
+        categoriesCash.put(category.getId(), category);
+        return categoryMapper.toCategoryDto(category);
     }
 
     @Override
     public CategoryDto update(Long id, CreateCategoryRequestDto categoryRequestDto) {
         Category category = findCategoryById(id);
         categoryMapper.updateCategoryEntity(category, categoryRequestDto);
-        return categoryMapper.toCategoryDto(categoryRepository.save(category));
+        categoryRepository.save(category);
+        categoriesCash.put(category.getId(), category);
+        return categoryMapper.toCategoryDto(category);
     }
 
     @Override
@@ -62,6 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new EntityNotFoundException("Can't delete a category with id: " + id);
         }
         categoryRepository.deleteById(id);
+        categoriesCash.remove(id);
     }
 
     private Category findCategoryById(Long id) {

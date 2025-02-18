@@ -8,7 +8,6 @@ import onlinebookstore.dto.book.BookDto;
 import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.dto.book.BookSearchParametersDto;
 import onlinebookstore.dto.book.CreateBookRequestDto;
-import onlinebookstore.exception.CategoryNotFoundException;
 import onlinebookstore.exception.DataProcessingException;
 import onlinebookstore.exception.EntityNotFoundException;
 import onlinebookstore.mapper.BookMapper;
@@ -74,7 +73,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Page<BookDtoWithoutCategoryIds> getByCategoryId(Long categoryId, Pageable pageable) {
         if (!categoriesCash.containsKey(categoryId)) {
-            throw new CategoryNotFoundException("Can't get books with category ID: " + categoryId);
+            throw new EntityNotFoundException("Can't get books with category ID: " + categoryId);
         }
         return bookRepository.findAllByCategoryId(categoryId, pageable)
                 .map(bookMapper::toBookDtoWithoutCategories);
