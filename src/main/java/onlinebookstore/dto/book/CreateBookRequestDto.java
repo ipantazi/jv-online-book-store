@@ -2,11 +2,13 @@ package onlinebookstore.dto.book;
 
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.Set;
 import org.hibernate.validator.constraints.URL;
 
 public record CreateBookRequestDto(
@@ -36,6 +38,9 @@ public record CreateBookRequestDto(
 
         @URL(message = "Invalid URL. Please provide a valid UPL of cover image.")
         @Size(max = 1024, message = "URL must not exceed 1024 characters.")
-        String coverImage
+        String coverImage,
+
+        @NotEmpty(message = "Invalid categories. Categories shouldn't be empty.")
+        Set<@NotNull(message = "Category Id shouldn't be null.") Long> categoryIds
 ) {
 }

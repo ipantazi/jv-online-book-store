@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-books_categories-table
+      author: Illia Pantazi
+      changes:
+        - createTable:
+            tableName: books_categories
+            columns:
+              - column:
+                  name: book_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk-books_categories-book
+                    references: books(id)
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk-books_categories-category
+                    references: categories(id)
+        - addPrimaryKey:
+            tableName: books_categories
+            columnNames: book_id, category_id
+            constraintName: pk-books_categories

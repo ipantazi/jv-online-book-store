@@ -39,10 +39,10 @@ public class UserServiceImpl implements UserService {
                     + userRegistrationDto.email());
         }
 
-        User user = userMapper.toModel(userRegistrationDto);
+        User user = userMapper.toUserEntity(userRegistrationDto);
         user.setPassword(passwordEncoder.encode(userRegistrationDto.password()));
         user.getRoles().add(rolesCache.get(DEFAULT_ROLE));
 
-        return userMapper.toDto(userRepository.save(user));
+        return userMapper.toUserDto(userRepository.save(user));
     }
 }
