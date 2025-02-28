@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import onlinebookstore.config.MapperConfig;
 import onlinebookstore.dto.book.BookDto;
-import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.dto.book.CreateBookRequestDto;
 import onlinebookstore.model.Book;
 import onlinebookstore.model.Category;
@@ -39,6 +38,4 @@ public interface BookMapper {
             source = "categoryIds",
             qualifiedByName = "mappingCategoriesIDToCategories")
     void updateBookEntity(CreateBookRequestDto bookRequestDto, @MappingTarget Book book);
-
-    BookDtoWithoutCategoryIds toBookDtoWithoutCategories(Book book);
 }

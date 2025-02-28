@@ -14,10 +14,12 @@ import onlinebookstore.mapper.BookMapper;
 import onlinebookstore.model.Book;
 import onlinebookstore.repository.SpecificationBuilder;
 import onlinebookstore.repository.book.BookRepository;
+import onlinebookstore.repository.cartitem.CartItemRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
     private final SpecificationBuilder<Book> specificationBuilder;
+    private final CartItemRepository cartItemRepository;
 
     @Override
     public BookDto save(CreateBookRequestDto bookRequestDto) {
@@ -52,21 +55,23 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDto findById(Long id) {
-        return bookMapper.toBookDto(findBookById(id));
+        return bookMapper.toBookDto(findBookByIdWithCategories(id));
     }
 
     @Override
     public BookDto update(Long id, CreateBookRequestDto bookRequestDto) {
-        Book book = findBookById(id);
+        Book book = findBookByIdWithCategories(id);
         bookMapper.updateBookEntity(bookRequestDto, book);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         if (!bookRepository.existsById(id)) {
             throw new EntityNotFoundException("Can't delete a book with ID: " + id);
         }
+        cartItemRepository.deleteAllByBookId(id);
         bookRepository.deleteById(id);
     }
 
@@ -75,12 +80,11 @@ public class BookServiceImpl implements BookService {
         if (!categoriesCash.containsKey(categoryId)) {
             throw new EntityNotFoundException("Can't get books with category ID: " + categoryId);
         }
-        return bookRepository.findAllByCategoryId(categoryId, pageable)
-                .map(bookMapper::toBookDtoWithoutCategories);
+        return bookRepository.findAllByCategoryId(categoryId, pageable);
     }
 
-    private Book findBookById(Long id) {
-        return bookRepository.findById(id).orElseThrow(() ->
+    private Book findBookByIdWithCategories(Long id) {
+        return bookRepository.findWithCategoriesById(id).orElseThrow(() ->
                 new EntityNotFoundException("Can`t find the book by id: " + id));
     }
 }

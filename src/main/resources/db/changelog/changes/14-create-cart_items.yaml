@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-cart_items-tables
+      author: Illia Pantazi
+      changes:
+        - createTable:
+            tableName: cart_items
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: shopping_cart_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk-cart_items-shopping_cart
+                    references: shopping_carts(id)
+              - column:
+                  name: book_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk-cart_items-book
+                    references: books(id)
+              - column:
+                  name: quantity
+                  type: bigint
+                  constraints:
+                    nullable: false

@@ -1,11 +1,10 @@
 package onlinebookstore.security;
 
 import lombok.RequiredArgsConstructor;
-import onlinebookstore.exception.UserEmailNotFoundException;
+import onlinebookstore.exception.UsernameNotFoundException;
 import onlinebookstore.repository.user.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +15,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email).orElseThrow(()
-                -> new UserEmailNotFoundException("Can't find user by email: " + email));
+                -> new UsernameNotFoundException("Can't find user by email: " + email));
     }
 }

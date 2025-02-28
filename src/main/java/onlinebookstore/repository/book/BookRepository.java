@@ -3,6 +3,7 @@ package onlinebookstore.repository.book;
 import java.util.List;
 import java.util.Optional;
 import lombok.NonNull;
+import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.model.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,8 +20,17 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
     @Query(value = "SELECT COUNT(*) > 0 FROM books WHERE isbn = :isbn", nativeQuery = true)
     Long existsByIsbnIncludingDeleted(@Param("isbn") String isbn);
 
-    @Query(value = "SELECT b FROM Book b JOIN b.categories c WHERE c.id = :categoryId")
-    Page<Book> findAllByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
+    @Query("""
+            SELECT new onlinebookstore.dto.book.BookDtoWithoutCategoryIds(
+            b.id, b.title, b.author, b.isbn, b.price, b.description, b.coverImage)
+            FROM Book b
+            JOIN b.categories c
+            WHERE c.id = :categoryId AND b.isDeleted = false
+            """)
+    Page<BookDtoWithoutCategoryIds> findAllByCategoryId(
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 
     @Override
     @EntityGraph(attributePaths = "categories")
@@ -32,8 +42,11 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
     @NonNull
     List<Book> findAll(Specification<Book> bookSpecification);
 
-    @Override
     @EntityGraph(attributePaths = "categories")
+    @NonNull
+    Optional<Book> findWithCategoriesById(@NonNull Long id);
+
+    @Override
     @NonNull
     Optional<Book> findById(@NonNull Long id);
 }
