@@ -4,11 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import onlinebookstore.dto.cartitem.CartItemDto;
-import onlinebookstore.dto.cartitem.CartItemSimpleDto;
-import onlinebookstore.dto.cartitem.CreateCartItemDto;
+import onlinebookstore.dto.cartitem.CartItemRequestDto;
 import onlinebookstore.dto.cartitem.UpdateCartItemDto;
 import onlinebookstore.dto.shoppingcart.ShoppingCartDto;
+import onlinebookstore.model.User;
 import onlinebookstore.service.shoppingcart.ShoppingCartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,7 +34,8 @@ public class ShoppingCartController {
     @Operation(summary = "Get shopping cart.",
             description = "Retrieve user's shopping cart and review its contents.")
     public ShoppingCartDto getShoppingCart(Authentication authentication) {
-        return shoppingCartService.getShoppingCart(authentication.getName());
+        User user = (User)authentication.getPrincipal();
+        return shoppingCartService.getShoppingCart(user.getId());
     }
 
     @PostMapping
@@ -43,19 +43,21 @@ public class ShoppingCartController {
     @ResponseStatus(value = HttpStatus.CREATED)
     @Operation(summary = "Add cart item to the shopping cart.",
             description = "Add a book to the shopping cart.")
-    public CartItemDto addCartItem(Authentication authentication,
-                                   @RequestBody @Valid CreateCartItemDto createCartItemDto) {
-        return shoppingCartService.addCartItem(authentication.getName(), createCartItemDto);
+    public ShoppingCartDto addCartItem(Authentication authentication,
+                                       @RequestBody @Valid CartItemRequestDto cartItemRequestDto) {
+        User user = (User)authentication.getPrincipal();
+        return shoppingCartService.addCartItem(user.getId(), cartItemRequestDto);
     }
 
     @PutMapping("/items/{cartItemId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @ResponseStatus(value = HttpStatus.OK)
     @Operation(summary = "Update cart item of a book in the shopping cart.",
             description = "Update the books quantity in the shopping cart by cart item id.")
-    public CartItemSimpleDto updateCartItem(@PathVariable Long cartItemId,
-                                            @RequestBody @Valid UpdateCartItemDto updateCartItem) {
-        return shoppingCartService.updateCartItem(cartItemId, updateCartItem);
+    public ShoppingCartDto updateCartItem(Authentication authentication,
+                                          @PathVariable Long cartItemId,
+                                          @RequestBody @Valid UpdateCartItemDto updateCartItem) {
+        User user = (User)authentication.getPrincipal();
+        return shoppingCartService.updateCartItem(user.getId(), cartItemId, updateCartItem);
     }
 
     @DeleteMapping("/items/{cartItemId}")
@@ -63,7 +65,8 @@ public class ShoppingCartController {
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     @Operation(summary = "Remove a book from the shopping cart.",
             description = "Remove an item from the user's shopping cart.")
-    public void delete(@PathVariable Long cartItemId) {
-        shoppingCartService.deleteById(cartItemId);
+    public void delete(Authentication authentication, @PathVariable Long cartItemId) {
+        User user = (User)authentication.getPrincipal();
+        shoppingCartService.deleteById(user.getId(), cartItemId);
     }
 }

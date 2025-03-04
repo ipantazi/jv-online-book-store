@@ -55,12 +55,12 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookDto findById(Long id) {
-        return bookMapper.toBookDto(findBookByIdWithCategories(id));
+        return bookMapper.toBookDto(findBookById(id));
     }
 
     @Override
     public BookDto update(Long id, CreateBookRequestDto bookRequestDto) {
-        Book book = findBookByIdWithCategories(id);
+        Book book = findBookById(id);
         bookMapper.updateBookEntity(bookRequestDto, book);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
@@ -71,7 +71,7 @@ public class BookServiceImpl implements BookService {
         if (!bookRepository.existsById(id)) {
             throw new EntityNotFoundException("Can't delete a book with ID: " + id);
         }
-        cartItemRepository.deleteAllByBookId(id);
+        cartItemRepository.findByBookId(id).ifPresent(cartItemRepository::delete);
         bookRepository.deleteById(id);
     }
 
@@ -83,8 +83,9 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findAllByCategoryId(categoryId, pageable);
     }
 
-    private Book findBookByIdWithCategories(Long id) {
-        return bookRepository.findWithCategoriesById(id).orElseThrow(() ->
+    @Override
+    public Book findBookById(Long id) {
+        return bookRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Can`t find the book by id: " + id));
     }
 }

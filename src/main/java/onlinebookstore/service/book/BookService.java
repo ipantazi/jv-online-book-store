@@ -5,6 +5,7 @@ import onlinebookstore.dto.book.BookDto;
 import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.dto.book.BookSearchParametersDto;
 import onlinebookstore.dto.book.CreateBookRequestDto;
+import onlinebookstore.model.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -22,4 +23,6 @@ public interface BookService {
     void deleteById(Long id);
 
     Page<BookDtoWithoutCategoryIds> getByCategoryId(Long categoryId, Pageable pageable);
+
+    Book findBookById(Long id);
 }

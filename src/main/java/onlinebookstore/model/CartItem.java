@@ -19,20 +19,20 @@ import lombok.ToString;
 @Table(name = "cart_items")
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "shopping_cart_id", nullable = false)
+    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private ShoppingCart shoppingCart;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "book_id", nullable = false)
+    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Book book;
 

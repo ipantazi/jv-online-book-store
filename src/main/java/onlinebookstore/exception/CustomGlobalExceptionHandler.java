@@ -30,12 +30,6 @@ public class CustomGlobalExceptionHandler extends ResponseEntityExceptionHandler
         return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<Object> handleUsernameNotFoundException(UsernameNotFoundException ex) {
-        Map<String, Object> body = bodyBuilder(ex.getMessage(), HttpStatus.UNAUTHORIZED);
-        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
-    }
-
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Object> handleAuthenticationException(AuthenticationException ex) {
         Map<String, Object> body = bodyBuilder("Email or password invalid",

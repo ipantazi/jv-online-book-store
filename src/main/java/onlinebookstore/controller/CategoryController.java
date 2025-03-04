@@ -63,7 +63,6 @@ public class CategoryController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
     @Operation(
             summary = "Update a specific category.",
             description = "Update a specific category identified by id."

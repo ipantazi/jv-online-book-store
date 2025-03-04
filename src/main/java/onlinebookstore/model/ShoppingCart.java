@@ -24,24 +24,23 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("is_deleted = false")
 @Setter
 @Getter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class ShoppingCart {
     @Id
-    @EqualsAndHashCode.Include
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
     @JoinColumn(name = "id", nullable = false)
+    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private User user;
 
     @OneToMany(
             mappedBy = "shoppingCart",
-            fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Set<CartItem> cartItems = new HashSet<>();
 

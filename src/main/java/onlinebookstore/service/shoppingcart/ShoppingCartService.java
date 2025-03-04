@@ -1,20 +1,23 @@
 package onlinebookstore.service.shoppingcart;
 
-import onlinebookstore.dto.cartitem.CartItemDto;
-import onlinebookstore.dto.cartitem.CartItemSimpleDto;
-import onlinebookstore.dto.cartitem.CreateCartItemDto;
+import onlinebookstore.dto.cartitem.CartItemRequestDto;
 import onlinebookstore.dto.cartitem.UpdateCartItemDto;
 import onlinebookstore.dto.shoppingcart.ShoppingCartDto;
+import onlinebookstore.model.ShoppingCart;
 import onlinebookstore.model.User;
 
 public interface ShoppingCartService {
-    ShoppingCartDto getShoppingCart(String email);
+    ShoppingCartDto getShoppingCart(Long userId);
 
-    CartItemDto addCartItem(String email, CreateCartItemDto createCartItemDto);
+    ShoppingCartDto addCartItem(Long userId, CartItemRequestDto cartItemRequestDto);
 
-    CartItemSimpleDto updateCartItem(Long cartItemId, UpdateCartItemDto updateCartItem);
+    ShoppingCartDto updateCartItem(
+            Long userId,
+            Long cartItemId,
+            UpdateCartItemDto updateCartItem
+    );
 
-    void deleteById(Long id);
+    void deleteById(Long userId, Long cartItemId);
 
-    void registerNewShoppingCart(User user);
+    ShoppingCart registerNewShoppingCart(User user);
 }

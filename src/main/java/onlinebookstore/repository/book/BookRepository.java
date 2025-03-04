@@ -44,9 +44,5 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
 
     @EntityGraph(attributePaths = "categories")
     @NonNull
-    Optional<Book> findWithCategoriesById(@NonNull Long id);
-
-    @Override
-    @NonNull
     Optional<Book> findById(@NonNull Long id);
 }
