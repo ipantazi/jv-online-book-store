@@ -1,8 +1,7 @@
 package onlinebookstore.service.shoppingcart;
 
 import jakarta.transaction.Transactional;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.cartitem.CartItemRequestDto;
 import onlinebookstore.dto.cartitem.UpdateCartItemDto;
@@ -10,7 +9,6 @@ import onlinebookstore.dto.shoppingcart.ShoppingCartDto;
 import onlinebookstore.exception.EntityNotFoundException;
 import onlinebookstore.mapper.CartItemMapper;
 import onlinebookstore.mapper.ShoppingCartMapper;
-import onlinebookstore.model.Book;
 import onlinebookstore.model.CartItem;
 import onlinebookstore.model.ShoppingCart;
 import onlinebookstore.model.User;
@@ -22,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ShoppingCartServiceImpl implements ShoppingCartService {
     private final UserRepository userRepository;
     private final ShoppingCartRepository shoppingCartRepository;
@@ -31,37 +30,31 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     private final BookService bookService;
 
     @Override
-    @Transactional
     public ShoppingCartDto getShoppingCart(Long userId) {
         return shoppingCartMapper.toShoppingCartDto(findShoppingCartByUserId(userId));
     }
 
     @Override
-    @Transactional
     public ShoppingCartDto addCartItem(Long userId, CartItemRequestDto cartItemRequestDto) {
         Long bookId = cartItemRequestDto.getBookId();
         ShoppingCart shoppingCart = findShoppingCartByUserId(userId);
-        Map<Long, CartItem> cartItemMap = shoppingCart.getCartItems().stream()
-                .collect(Collectors.toMap(
-                        cartItem -> cartItem.getBook().getId(),
-                        cartItem -> cartItem));
-        CartItem cartItem = cartItemMap.get(bookId);
+        Optional<CartItem> optionalCartItem = shoppingCart.getCartItems().stream()
+                .filter(cartItem -> cartItem.getBook().getId().equals(bookId))
+                .findFirst();
 
-        if (cartItem != null) {
+        if (optionalCartItem.isPresent()) {
+            CartItem cartItem = optionalCartItem.get();
             cartItem.setQuantity(cartItem.getQuantity() + cartItemRequestDto.getQuantity());
         } else {
-            Book book = bookService.findBookById(bookId);
-            cartItem = cartItemMapper.toCartItemEntity(cartItemRequestDto);
-            cartItem.setBook(book);
+            CartItem cartItem = cartItemMapper.toCartItemEntity(cartItemRequestDto);
             cartItem.setShoppingCart(shoppingCart);
+            cartItem.setBook(bookService.findBookById(bookId));
             shoppingCart.getCartItems().add(cartItem);
         }
-
         return shoppingCartMapper.toShoppingCartDto(shoppingCartRepository.save(shoppingCart));
     }
 
     @Override
-    @Transactional
     public ShoppingCartDto updateCartItem(Long userId,
                                           Long cartItemId,
                                           UpdateCartItemDto updateCartItem) {
@@ -73,7 +66,6 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     }
 
     @Override
-    @Transactional
     public void deleteById(Long userId, Long cartItemId) {
         ShoppingCart shoppingCart = findShoppingCartByUserId(userId);
         CartItem cartItem = findCartItemByItemIdAndCartId(cartItemId, shoppingCart.getId());

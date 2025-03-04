@@ -61,6 +61,10 @@ public class BookServiceImpl implements BookService {
     @Override
     public BookDto update(Long id, CreateBookRequestDto bookRequestDto) {
         Book book = findBookById(id);
+        if (!book.getIsbn().equals(bookRequestDto.isbn())) {
+            throw new EntityNotFoundException("Can't update the book. Invalid book id: "
+                    + id + " or isbn: " + bookRequestDto.isbn());
+        }
         bookMapper.updateBookEntity(bookRequestDto, book);
         return bookMapper.toBookDto(bookRepository.save(book));
     }
@@ -80,7 +84,8 @@ public class BookServiceImpl implements BookService {
         if (!categoriesCash.containsKey(categoryId)) {
             throw new EntityNotFoundException("Can't get books with category ID: " + categoryId);
         }
-        return bookRepository.findAllByCategoryId(categoryId, pageable);
+        return bookRepository.findAllByCategoryId(categoryId, pageable)
+                .map(bookMapper::toBookDtoWithoutCategoryIds);
     }
 
     @Override
