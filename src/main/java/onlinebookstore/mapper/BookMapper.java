@@ -40,5 +40,5 @@ public interface BookMapper {
             qualifiedByName = "mappingCategoriesIDToCategories")
     void updateBookEntity(CreateBookRequestDto bookRequestDto, @MappingTarget Book book);
 
-    BookDtoWithoutCategoryIds toBookDtoWithoutCategories(Book book);
+    BookDtoWithoutCategoryIds toBookDtoWithoutCategoryIds(Book book);
 }

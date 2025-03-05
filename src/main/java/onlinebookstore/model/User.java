@@ -29,10 +29,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 @SQLRestriction("is_deleted = false")
 @Getter
 @Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User implements UserDetails {
     private static final String ROLE_PREFIX = "ROLE_";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -51,7 +53,6 @@ public class User implements UserDetails {
 
     @ManyToMany
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     @JoinTable(
             name = "users_roles",
             joinColumns = @JoinColumn(name = "user_id"),

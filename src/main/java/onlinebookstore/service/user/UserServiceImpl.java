@@ -12,8 +12,10 @@ import onlinebookstore.model.Role;
 import onlinebookstore.model.User;
 import onlinebookstore.repository.role.RoleRepository;
 import onlinebookstore.repository.user.UserRepository;
+import onlinebookstore.service.shoppingcart.ShoppingCartService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final ShoppingCartService shoppingCartService;
 
     @PostConstruct
     public void initializeRolesCache() {
@@ -32,6 +35,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponseDto register(UserRegistrationRequestDto userRegistrationDto)
             throws RegistrationException {
         if (userRepository.existsByEmail(userRegistrationDto.email())) {
@@ -42,7 +46,10 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.toUserEntity(userRegistrationDto);
         user.setPassword(passwordEncoder.encode(userRegistrationDto.password()));
         user.getRoles().add(rolesCache.get(DEFAULT_ROLE));
+        userRepository.save(user);
 
-        return userMapper.toUserDto(userRepository.save(user));
+        shoppingCartService.registerNewShoppingCart(user);
+
+        return userMapper.toUserDto(user);
     }
 }

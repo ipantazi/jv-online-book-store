@@ -25,9 +25,11 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLDelete(sql = "UPDATE books SET is_deleted = true WHERE id=?")
 @Getter
 @Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -53,6 +55,5 @@ public class Book {
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id"))
     @ToStringExclude
-    @EqualsAndHashCode.Exclude
     private Set<Category> categories = new HashSet<>();
 }

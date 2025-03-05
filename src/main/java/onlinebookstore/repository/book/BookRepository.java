@@ -2,7 +2,6 @@ package onlinebookstore.repository.book;
 
 import java.util.List;
 import java.util.Optional;
-import lombok.NonNull;
 import onlinebookstore.model.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,21 +18,17 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
     @Query(value = "SELECT COUNT(*) > 0 FROM books WHERE isbn = :isbn", nativeQuery = true)
     Long existsByIsbnIncludingDeleted(@Param("isbn") String isbn);
 
-    @Query(value = "SELECT b FROM Book b JOIN b.categories c WHERE c.id = :categoryId")
+    @Query("SELECT b FROM Book b JOIN b.categories c WHERE c.id = :categoryId")
     Page<Book> findAllByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = "categories")
-    @NonNull
-    Page<Book> findAll(@NonNull Pageable pageable);
+    Page<Book> findAll(Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = "categories")
-    @NonNull
     List<Book> findAll(Specification<Book> bookSpecification);
 
-    @Override
     @EntityGraph(attributePaths = "categories")
-    @NonNull
-    Optional<Book> findById(@NonNull Long id);
+    Optional<Book> findById(Long id);
 }

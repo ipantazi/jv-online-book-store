@@ -1,5 +1,5 @@
 databaseChangeLog:
-  - include: 
+  - include:
       file: db/changelog/changes/01-create-books-table.yaml
   - include:
       file: db/changelog/changes/02-create-users-table.yaml
@@ -23,3 +23,7 @@ databaseChangeLog:
       file: db/changelog/changes/11-create-categories-table.yaml
   - include:
       file: db/changelog/changes/12-create-books_categories-table.yaml
+  - include:
+      file: db/changelog/changes/13-create-shopping_carts.yaml
+  - include:
+      file: db/changelog/changes/14-create-cart_items.yaml
