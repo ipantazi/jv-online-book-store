@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,6 +50,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String lastName;
 
+    @Size(max = 100)
     private String shippingAddress;
 
     @ManyToMany

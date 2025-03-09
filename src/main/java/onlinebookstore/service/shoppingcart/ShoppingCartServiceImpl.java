@@ -80,7 +80,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         return shoppingCartRepository.save(shoppingCart);
     }
 
-    private ShoppingCart findShoppingCartByUserId(Long userId) {
+    @Override
+    public ShoppingCart findShoppingCartByUserId(Long userId) {
         return shoppingCartRepository.findByUserId(userId).orElseGet(() ->
                 registerNewShoppingCart(userRepository.findById(userId).orElseThrow(() ->
                         new EntityNotFoundException("User with id " + userId + " not found"))));
