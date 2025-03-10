@@ -20,4 +20,6 @@ public interface ShoppingCartService {
     void deleteById(Long userId, Long cartItemId);
 
     ShoppingCart registerNewShoppingCart(User user);
+
+    ShoppingCart findShoppingCartByUserId(Long userId);
 }
