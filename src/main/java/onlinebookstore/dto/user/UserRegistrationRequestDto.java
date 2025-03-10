@@ -39,7 +39,7 @@ public record UserRegistrationRequestDto(
         @Pattern(regexp = "^[a-zA-Z]*$", message = "Last name must be contain only letters.")
         String lastName,
 
-        @Size(max = 100, message = "Shipping address must not exceed 255 characters.")
+        @Size(max = 100, message = "Shipping address must not exceed 100 characters.")
         String shippingAddress
 ) {
 }

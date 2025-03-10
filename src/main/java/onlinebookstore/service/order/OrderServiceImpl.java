@@ -33,7 +33,7 @@ public class OrderServiceImpl implements OrderService {
         ShoppingCart shoppingCart = shoppingCartService.findShoppingCartByUserId(userId);
 
         if (shoppingCart.getCartItems().isEmpty()) {
-            throw new OrderProcessingException("Shopping cart is empty");
+            throw new OrderProcessingException("Shopping cart is empty for user: " + userId);
         }
         Order order = orderMapper.toOrderEntity(shoppingCart);
         order.setOrderDate(LocalDateTime.now());
