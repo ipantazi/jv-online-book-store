@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.order.OrderDto;
 import onlinebookstore.dto.order.OrderRequestDto;
 import onlinebookstore.dto.order.UpdateOrderDto;
+import onlinebookstore.dto.orderitem.OrderItemDto;
 import onlinebookstore.model.User;
 import onlinebookstore.service.order.OrderService;
+import onlinebookstore.service.orderitem.OrderItemService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,12 +25,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Order management.", description = "Endpoints of management orders.")
+@Tag(name = "Order and order item management.",
+        description = "Endpoints of management orders and order items.")
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService orderService;
+    private final OrderItemService orderItemService;
 
     @PostMapping
     @PreAuthorize(value = "hasRole('ROLE_USER')")
@@ -55,5 +59,31 @@ public class OrderController {
     public OrderDto updateOrder(@PathVariable("id") Long orderId,
                                 @RequestBody @Valid UpdateOrderDto updateOrderDto) {
         return orderService.changeStatusOrder(orderId, updateOrderDto);
+    }
+
+    @GetMapping("/{orderId}/items")
+    @PreAuthorize(value = "hasRole('ROLE_USER')")
+    @Operation(
+            summary = "Get order items for a specific order.",
+            description = "Retrieve all items for a specific order."
+    )
+    public Page<OrderItemDto> getOrderItems(Authentication authentication,
+                                            Pageable pageable,
+                                            @PathVariable long orderId) {
+        User user = (User) authentication.getPrincipal();
+        return orderItemService.getOrderItems(user.getId(), orderId, pageable);
+    }
+
+    @GetMapping("/{orderId}/items/{itemId}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @Operation(
+            summary = "Get a a specific order item",
+            description = "Retrieve a specific order item within an order."
+    )
+    public OrderItemDto getOrderItem(Authentication authentication,
+                                     @PathVariable long orderId,
+                                     @PathVariable long itemId) {
+        User user = (User) authentication.getPrincipal();
+        return orderItemService.getOrderItem(user.getId(), orderId, itemId);
     }
 }

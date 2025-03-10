@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.order.OrderDto;
 import onlinebookstore.dto.order.OrderRequestDto;
 import onlinebookstore.dto.order.UpdateOrderDto;
-import onlinebookstore.exception.DataProcessingException;
 import onlinebookstore.exception.EntityNotFoundException;
+import onlinebookstore.exception.OrderProcessingException;
 import onlinebookstore.mapper.OrderMapper;
 import onlinebookstore.model.Order;
 import onlinebookstore.model.ShoppingCart;
@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
@@ -27,22 +28,18 @@ public class OrderServiceImpl implements OrderService {
     private final ShoppingCartRepository shoppingCartRepository;
 
     @Override
-    @Transactional
     public OrderDto createOrder(Long userId, OrderRequestDto orderRequestDto) {
         String shippingAddress = orderRequestDto.shippingAddress();
         ShoppingCart shoppingCart = shoppingCartService.findShoppingCartByUserId(userId);
 
         if (shoppingCart.getCartItems().isEmpty()) {
-            throw new EntityNotFoundException("Shopping cart is empty");
+            throw new OrderProcessingException("Shopping cart is empty");
         }
         Order order = orderMapper.toOrderEntity(shoppingCart);
         order.setOrderDate(LocalDateTime.now());
         order.setShippingAddress(shippingAddress);
         orderRepository.save(order);
 
-        if (order.getId() == null) {
-            throw new DataProcessingException("Can't save order: " + order);
-        }
         shoppingCart.getCartItems().clear();
         shoppingCartRepository.save(shoppingCart);
 
