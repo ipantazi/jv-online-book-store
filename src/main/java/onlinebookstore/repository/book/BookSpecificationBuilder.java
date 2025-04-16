@@ -1,6 +1,5 @@
 package onlinebookstore.repository.book;
 
-import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import onlinebookstore.dto.book.BookSearchParametersDto;
 import onlinebookstore.model.Book;
@@ -22,7 +21,6 @@ public class BookSpecificationBuilder implements SpecificationBuilder<Book> {
                     .getSpecification(searchParameters.title()));
         }
         if (searchParameters.author() != null && !searchParameters.author().isEmpty()) {
-            System.out.println("author");
             spec = spec.and(specificationProviderManager.getSpecificationProvider("author")
                     .getSpecification(searchParameters.author()));
         }
@@ -30,10 +28,10 @@ public class BookSpecificationBuilder implements SpecificationBuilder<Book> {
             spec = spec.and(specificationProviderManager.getSpecificationProvider("isbn")
                     .getSpecification(searchParameters.isbn()));
         }
-        if (searchParameters.price() != null
-                && searchParameters.price().compareTo(BigDecimal.ZERO) > 0) {
+        if (searchParameters.priceRange() != null
+                && !searchParameters.priceRange().isEmpty()) {
             spec = spec.and(specificationProviderManager.getSpecificationProvider("price")
-                    .getSpecification(searchParameters.price()));
+                    .getSpecification(searchParameters.priceRange()));
         }
         return spec;
     }
