@@ -1,8 +1,39 @@
 package onlinebookstore.controller.category;
 
 import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCash;
+import static onlinebookstore.util.TestDataUtil.EXISTING_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.EXPECTED_BOOK_DTOS_SIZE;
+import static onlinebookstore.util.TestDataUtil.EXPECTED_CATEGORIES_SIZE;
+import static onlinebookstore.util.TestDataUtil.NEW_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.NOT_EXISTING_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.SAFE_DELETED_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.createTestCategoryDto;
+import static onlinebookstore.util.TestDataUtil.createTestCategoryRequestDto;
+import static onlinebookstore.util.TestDataUtil.createTestInvalidCategoryDto;
+import static onlinebookstore.util.TestDataUtil.createTestUpdatedCategoryDto;
+import static onlinebookstore.util.TestDataUtil.fillCategoryCache;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertCategoryDtosAreEqual;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertErrorResponse;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertListCategoryDtosAreEqual;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertListErrorsResponse;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.EXPECTED_CATEGORY_ERRORS;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.EXPECTED_CATEGORY_NULL_ERRORS;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.NOT_FOUND;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.NO_CONTENT;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.UNPROCESSABLE_ENTITY;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_CATEGORIES;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_GET_BOOKS_BY_ALTERNATIVE_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_GET_BOOKS_BY_INVALID_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_GET_BOOKS_BY_VALID_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_INVALID_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_SAFE_DELETED_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_VALID_CATEGORY_ID;
+import static onlinebookstore.util.controller.ControllerTestUtil.parsePageContent;
+import static onlinebookstore.util.controller.DatabaseTestUtil.executeSqlScript;
+import static onlinebookstore.util.controller.MockMvcUtil.buildMockMvc;
+import static onlinebookstore.util.controller.MvcTestHelper.createJsonMvcResult;
+import static onlinebookstore.util.controller.MvcTestHelper.createMvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,11 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.LongStream;
 import javax.sql.DataSource;
@@ -23,6 +50,7 @@ import onlinebookstore.dto.book.BookDtoWithoutCategoryIds;
 import onlinebookstore.dto.category.CategoryDto;
 import onlinebookstore.dto.category.CreateCategoryRequestDto;
 import onlinebookstore.repository.category.CategoryRepository;
+import onlinebookstore.util.TestDataUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,70 +58,29 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultMatcher;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class CategoryControllerTest {
     protected static MockMvc mockMvc;
-    private static final int EXPECTED_SIZE = 2;
-    private static final int NOT_FOUND = HttpStatus.NOT_FOUND.value();
-    private static final int NO_CONTENT = HttpStatus.NO_CONTENT.value();
-    private static final int UNPROCESSABLE_ENTITY = HttpStatus.UNPROCESSABLE_ENTITY.value();
-    private static final int BAD_REQUEST = HttpStatus.BAD_REQUEST.value();
-    private static final Long VALID_CATEGORY_ID = 101L;
-    private static final Long SAFE_DELETED_CATEGORY_ID = 103L;
-    private static final Long NEW_CATEGORY_ID = 104L;
-    private static final Long INVALID_CATEGORY_ID = 999L;
-    private static final String DEFAULT_URL = "/categories";
-    private static final String URL_VALID_CATEGORY_ID = "/categories/" + VALID_CATEGORY_ID;
-    private static final String URL_INVALID_CATEGORY_ID = "/categories/" + INVALID_CATEGORY_ID;
-    private static final String URL_SAFE_DELETED_CATEGORY_ID = "/categories/"
-            + SAFE_DELETED_CATEGORY_ID;
-    private static final String URL_GET_BOOKS_BY_CATEGORY_ID101 = "/categories/" + VALID_CATEGORY_ID
-            + "/books";
-    private static final String URL_GET_BOOKS_BY_CATEGORY_ID102 = "/categories/102/books";
-    private static final String URL_GET_BOOKS_BY_INVALID_CATEGORY_ID = "/categories/"
-            + INVALID_CATEGORY_ID + "/books";
-    private static final List<String> expectedErrorMessages = List.of(
-            "name Invalid name. Size should be between 3 or 100.",
-            "description Description must not exceed 500 characters."
-    );
-    private static final List<String> expectedErrorNullMessages = List.of(
-            "name Invalid name. Name shouldn't be blank."
-    );
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeAll
-    static void beforeAll(
-            @Autowired DataSource dataSource,
-            @Autowired WebApplicationContext applicationContext
-    ) throws SQLException {
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(applicationContext)
-                .apply(springSecurity())
-                .build();
+    static void beforeAll(@Autowired DataSource dataSource,
+                          @Autowired WebApplicationContext applicationContext) {
+        mockMvc = buildMockMvc(applicationContext);
 
         teardown(dataSource);
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            executeSqlScript(connection,
-                    "database/products/add-test-category-to-categories-table.sql",
-                    "database/products/add-test-books-to-books-table.sql",
-                    "database/products/add-test-dependencies-to-books-categories-table.sql");
-        }
+        executeSqlScript(dataSource,
+                    "database/categories/add-test-category-to-categories-table.sql",
+                    "database/books/add-test-books-to-books-table.sql",
+                    "database/bookscategories/add-test-dependencies-to-books-categories-table.sql");
     }
 
     @AfterAll
@@ -103,48 +90,29 @@ public class CategoryControllerTest {
 
     @BeforeEach
     void setUp(@Autowired CategoryRepository categoryRepository) {
-        categoriesCash.clear();
-        categoryRepository.findAll().forEach(category ->
-                categoriesCash.put(category.getId(), category));
+        fillCategoryCache(categoryRepository);
     }
 
     @SneakyThrows
     static void teardown(DataSource dataSource) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            executeSqlScript(connection,
-                    "database/products/clear-all-book-category-dependencies.sql",
-                    "database/products/clear-all-categories.sql",
-                    "database/products/clear-all-books.sql");
-        }
-    }
-
-    private static void executeSqlScript(Connection connection, String... scriptPaths) {
-        for (String path : scriptPaths) {
-            ScriptUtils.executeSqlScript(connection, new ClassPathResource(path));
-        }
-    }
-
-    private static CategoryDto createTestCategoryDto(Long id) {
-        return new CategoryDto(
-                id,
-                "Test category " + id,
-                "Description test"
-        );
+        executeSqlScript(dataSource,
+                    "database/bookscategories/clear-all-book-category-dependencies.sql",
+                    "database/categories/clear-all-categories.sql",
+                    "database/books/clear-all-books.sql");
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Get all categories.")
     void getAll_ValidCategoriesCatalog_ShouldReturnAllCategories() throws Exception {
-        List<CategoryDto> expectedCategoryDtos = LongStream.range(
-                        VALID_CATEGORY_ID, VALID_CATEGORY_ID + EXPECTED_SIZE)
-                .mapToObj(CategoryControllerTest::createTestCategoryDto)
+        List<CategoryDto> expectedCategoryDtos = LongStream.range(EXISTING_CATEGORY_ID,
+                        EXISTING_CATEGORY_ID + EXPECTED_CATEGORIES_SIZE)
+                .mapToObj(TestDataUtil::createTestCategoryDto)
                 .toList();
 
-        MvcResult result = createMvcResult(get(DEFAULT_URL), status().isOk());
+        MvcResult result = createMvcResult(mockMvc, get(URL_CATEGORIES), status().isOk());
 
-        List<CategoryDto> actualCategoryDtos = parsePageContent(result,
+        List<CategoryDto> actualCategoryDtos = parsePageContent(result, objectMapper,
                 new TypeReference<List<CategoryDto>>() {});
 
         assertListCategoryDtosAreEqual(expectedCategoryDtos, actualCategoryDtos);
@@ -153,20 +121,20 @@ public class CategoryControllerTest {
     @WithMockUser(username = "alice@example.com")
     @Test
     @Sql(scripts = {
-            "classpath:database/products/clear-all-book-category-dependencies.sql",
-            "classpath:database/products/clear-all-categories.sql"
+            "classpath:database/bookscategories/clear-all-book-category-dependencies.sql",
+            "classpath:database/categories/clear-all-categories.sql"
     },
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(scripts = {
-            "classpath:database/products/add-test-category-to-categories-table.sql",
-            "classpath:database/products/add-test-dependencies-to-books-categories-table.sql"
+            "classpath:database/categories/add-test-category-to-categories-table.sql",
+            "classpath:database/bookscategories/add-test-dependencies-to-books-categories-table.sql"
     },
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Verify that getAll() method returns empty page when no categories exist.")
     void getAll_GivenEmptyCategoriesCatalog_ShouldReturnEmptyPage() throws Exception {
-        MvcResult result = createMvcResult(get(DEFAULT_URL), status().isOk());
+        MvcResult result = createMvcResult(mockMvc, get(URL_CATEGORIES), status().isOk());
 
-        List<CategoryDto> actualCategoryDtos = parsePageContent(result,
+        List<CategoryDto> actualCategoryDtos = parsePageContent(result, objectMapper,
                 new TypeReference<List<CategoryDto>>() {});
 
         assertThat(actualCategoryDtos).isEmpty();
@@ -176,9 +144,9 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Get a category by id.")
     void getCategoryById_GivenValidCategory_ShouldReturnCategory() throws Exception {
-        CategoryDto expectedCategoryDto = createTestCategoryDto(VALID_CATEGORY_ID);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
 
-        MvcResult result = createMvcResult(get(URL_VALID_CATEGORY_ID), status().isOk());
+        MvcResult result = createMvcResult(mockMvc, get(URL_VALID_CATEGORY_ID), status().isOk());
 
         CategoryDto actualCategoryDto = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
@@ -192,65 +160,69 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when book id doesn't exist.")
     void getCategoryById_GivenInvalidCategoryId_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(get(URL_INVALID_CATEGORY_ID), status().isNotFound());
+        MvcResult result = createMvcResult(mockMvc, get(URL_INVALID_CATEGORY_ID),
+                status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
-                "Can't find the category by id: " + INVALID_CATEGORY_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can't find the category by id: " + NOT_EXISTING_CATEGORY_ID);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Verify that an exception is throw when a category is safe deleted.")
     void getByCategoryId_CategoryIsSafeDeleted_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(get(URL_SAFE_DELETED_CATEGORY_ID),
+        MvcResult result = createMvcResult(mockMvc, get(URL_SAFE_DELETED_CATEGORY_ID),
                 status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
                 "Can't find the category by id: " + SAFE_DELETED_CATEGORY_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN", "USER"})
     @Test
     @Sql(scripts = {
-            "classpath:database/products/restoring-category-id101-after-test.sql"
+            "classpath:database/categories/restoring-category-id101-after-test.sql"
     },
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Deleted a specific category.")
     void delete_GivenValidCategory_ShouldDeleteCategory() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_VALID_CATEGORY_ID), status().isNoContent());
+        MvcResult result = createMvcResult(mockMvc, delete(URL_VALID_CATEGORY_ID),
+                status().isNoContent());
 
         assertThat(result.getResponse().getStatus()).isEqualTo(NO_CONTENT);
-        MvcResult checkResult = createMvcResult(get(URL_VALID_CATEGORY_ID), status().isNotFound());
-        assertErrorResponse(checkResult, NOT_FOUND,
-                "Can't find the category by id: " + VALID_CATEGORY_ID);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE - 1);
-        assertThat(categoriesCash).doesNotContainKey(VALID_CATEGORY_ID);
+        MvcResult checkResult = createMvcResult(mockMvc, get(URL_VALID_CATEGORY_ID),
+                status().isNotFound());
+        assertErrorResponse(checkResult, objectMapper, NOT_FOUND,
+                "Can't find the category by id: " + EXISTING_CATEGORY_ID);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE - 1);
+        assertThat(categoriesCash).doesNotContainKey(EXISTING_CATEGORY_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Verify that an exception is throw when category id doesn't exist.")
     void delete_GivenInvalidCategoryId_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_INVALID_CATEGORY_ID), status().isNotFound());
+        MvcResult result = createMvcResult(mockMvc, delete(URL_INVALID_CATEGORY_ID),
+                status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
-                "Can't delete a category with id: " + INVALID_CATEGORY_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can't delete a category with id: " + NOT_EXISTING_CATEGORY_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Verify that an exception is throw when a category is safe deleted.")
     void delete_CategoryIsSafeDeleted_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_SAFE_DELETED_CATEGORY_ID),
+        MvcResult result = createMvcResult(mockMvc, delete(URL_SAFE_DELETED_CATEGORY_ID),
                 status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
                 "Can't delete a category with id: " + SAFE_DELETED_CATEGORY_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
-    @Sql(scripts = "classpath:database/products/remove-new-test-category-from-categories.sql",
+    @Sql(scripts = "classpath:database/categories/remove-new-test-category-from-categories.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Create a new category.")
     void createCategory_ValidRequestDto_ShouldCreateCategory() throws Exception {
@@ -258,13 +230,13 @@ public class CategoryControllerTest {
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonResponse = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isCreated(),
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_CATEGORIES), status().isCreated(),
                 jsonResponse);
 
         CategoryDto actualCategoryDto = objectMapper.readValue(
                 result.getResponse().getContentAsString(), CategoryDto.class);
         assertCategoryDtosAreEqual(expectedCategoryDto, actualCategoryDto);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE + 1);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE + 1);
         assertThat(categoriesCash).containsKey(NEW_CATEGORY_ID);
     }
 
@@ -272,16 +244,16 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when a category already exists.")
     void createCategory_CategoryAlreadyExists_ShouldReturnUnprocessableEntity() throws Exception {
-        CategoryDto expectedCategoryDto = createTestCategoryDto(VALID_CATEGORY_ID);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonResponse = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL),
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_CATEGORIES),
                 status().isUnprocessableEntity(), jsonResponse);
 
-        assertErrorResponse(result, UNPROCESSABLE_ENTITY,
+        assertErrorResponse(result, objectMapper, UNPROCESSABLE_ENTITY,
                 "Can't save category with name: " + expectedCategoryDto.name());
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
         assertThat(categoriesCash).doesNotContainKey(NEW_CATEGORY_ID);
     }
 
@@ -289,15 +261,15 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when category fields are not in valid format.")
     void createCategory_InvalidFormatCategoryFields_ShouldReturnBadRequest() throws Exception {
-        CategoryDto expectedCategoryDto = createTestInvalidCategoryDto();
+        CategoryDto expectedCategoryDto = createTestInvalidCategoryDto(EXISTING_CATEGORY_ID);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isBadRequest(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_CATEGORIES),
+                status().isBadRequest(), jsonRequest);
 
-        assertListErrorResponse(result, expectedErrorMessages);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
+        assertListErrorsResponse(result, objectMapper, EXPECTED_CATEGORY_ERRORS);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
         assertThat(categoriesCash).doesNotContainKey(NEW_CATEGORY_ID);
     }
 
@@ -309,33 +281,33 @@ public class CategoryControllerTest {
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isBadRequest(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_CATEGORIES),
+                status().isBadRequest(), jsonRequest);
 
-        assertListErrorResponse(result, expectedErrorNullMessages);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
+        assertListErrorsResponse(result, objectMapper, EXPECTED_CATEGORY_NULL_ERRORS);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
         assertThat(categoriesCash).doesNotContainKey(NEW_CATEGORY_ID);
     }
 
     @WithMockUser(value = "bob@example.com", roles = {"ADMIN"})
     @Test
-    @Sql(scripts = "classpath:database/products/restoring-category-id101-after-test.sql",
+    @Sql(scripts = "classpath:database/categories/restoring-category-id101-after-test.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Update a specific category.")
     void updateCategory_ValidRequestDto_ShouldUpdateCategory() throws Exception {
-        CategoryDto expectedCategoryDto = createTestUpdatedCategoryDto(VALID_CATEGORY_ID);
+        CategoryDto expectedCategoryDto = createTestUpdatedCategoryDto(EXISTING_CATEGORY_ID);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonResponse = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_CATEGORY_ID), status().isOk(),
-                jsonResponse);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_CATEGORY_ID),
+                status().isOk(), jsonResponse);
 
         CategoryDto actualCategoryDto = objectMapper.readValue(
                 result.getResponse().getContentAsString(), CategoryDto.class);
         assertCategoryDtosAreEqual(expectedCategoryDto, actualCategoryDto);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
-        assertThat(categoriesCash).containsKey(VALID_CATEGORY_ID);
-        assertThat(categoriesCash.get(VALID_CATEGORY_ID).getName())
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
+        assertThat(categoriesCash).containsKey(EXISTING_CATEGORY_ID);
+        assertThat(categoriesCash.get(EXISTING_CATEGORY_ID).getName())
                 .isEqualTo(expectedCategoryDto.name());
     }
 
@@ -343,33 +315,33 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when the category id is not valid.")
     void updateCategory_InvalidCategoryId_ShouldReturnNotFound() throws Exception {
-        CategoryDto expectedCategoryDto = createTestUpdatedCategoryDto(INVALID_CATEGORY_ID);
+        CategoryDto expectedCategoryDto = createTestUpdatedCategoryDto(NOT_EXISTING_CATEGORY_ID);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_INVALID_CATEGORY_ID), status().isNotFound(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_INVALID_CATEGORY_ID),
+                status().isNotFound(), jsonRequest);
 
-        assertErrorResponse(result, NOT_FOUND,
-                "Can't find the category by id: " + INVALID_CATEGORY_ID);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
-        assertThat(categoriesCash).doesNotContainKey(INVALID_CATEGORY_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can't find the category by id: " + NOT_EXISTING_CATEGORY_ID);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
+        assertThat(categoriesCash).doesNotContainKey(NOT_EXISTING_CATEGORY_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Verify that an exception is throw when category fields are not in valid format.")
     void updateCategory_InvalidFormatCategoryFields_ShouldReturnBadRequest() throws Exception {
-        CategoryDto expectedCategoryDto = createTestInvalidCategoryDto();
+        CategoryDto expectedCategoryDto = createTestInvalidCategoryDto(EXISTING_CATEGORY_ID);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_CATEGORY_ID),
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_CATEGORY_ID),
                 status().isBadRequest(), jsonRequest);
 
-        assertListErrorResponse(result, expectedErrorMessages);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
-        assertThat(categoriesCash.get(VALID_CATEGORY_ID).getName())
+        assertListErrorsResponse(result, objectMapper, EXPECTED_CATEGORY_ERRORS);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
+        assertThat(categoriesCash.get(EXISTING_CATEGORY_ID).getName())
                 .isNotEqualTo(expectedCategoryDto.name());
     }
 
@@ -377,39 +349,38 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when the category fields are null.")
     void updateCategory_NullCategoryFields_ShouldReturnBadRequest() throws Exception {
-        CategoryDto expectedCategoryDto = new CategoryDto(VALID_CATEGORY_ID, null, null);
+        CategoryDto expectedCategoryDto = new CategoryDto(EXISTING_CATEGORY_ID, null, null);
         CreateCategoryRequestDto requestDto = createTestCategoryRequestDto(expectedCategoryDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_CATEGORY_ID), status().isBadRequest(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_CATEGORY_ID),
+                status().isBadRequest(), jsonRequest);
 
-        assertListErrorResponse(result, expectedErrorNullMessages);
-        assertThat(categoriesCash).hasSize(EXPECTED_SIZE);
-        assertThat(categoriesCash.get(VALID_CATEGORY_ID).getName()).isNotNull();
+        assertListErrorsResponse(result, objectMapper, EXPECTED_CATEGORY_NULL_ERRORS);
+        assertThat(categoriesCash).hasSize(EXPECTED_CATEGORIES_SIZE);
+        assertThat(categoriesCash.get(EXISTING_CATEGORY_ID).getName()).isNotNull();
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Get books by a specific category.")
     void getBooksByCategoryId_ValidRequestDto_ShouldReturnBooksByCategory() throws Exception {
-        int expectedBooksSize = 3;
-        MvcResult result = createMvcResult(get(URL_GET_BOOKS_BY_CATEGORY_ID101),
+        MvcResult result = createMvcResult(mockMvc, get(URL_GET_BOOKS_BY_VALID_CATEGORY_ID),
                 status().isOk());
 
-        List<BookDtoWithoutCategoryIds> actualBookDtos = parsePageContent(result,
+        List<BookDtoWithoutCategoryIds> actualBookDtos = parsePageContent(result, objectMapper,
                 new TypeReference<List<BookDtoWithoutCategoryIds>>() {});
-        assertThat(actualBookDtos).hasSize(expectedBooksSize);
+        assertThat(actualBookDtos).hasSize(EXPECTED_BOOK_DTOS_SIZE);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Get empty page when no books found by the category id.")
     void getBooksByCategoryId_NoBooksByCategoryId_ShouldReturnEmptyPage() throws Exception {
-        MvcResult result = createMvcResult(get(URL_GET_BOOKS_BY_CATEGORY_ID102),
+        MvcResult result = createMvcResult(mockMvc, get(URL_GET_BOOKS_BY_ALTERNATIVE_CATEGORY_ID),
                 status().isOk());
 
-        List<BookDtoWithoutCategoryIds> actualBookDtos = parsePageContent(result,
+        List<BookDtoWithoutCategoryIds> actualBookDtos = parsePageContent(result, objectMapper,
                 new TypeReference<List<BookDtoWithoutCategoryIds>>() {});
         assertThat(actualBookDtos).isEmpty();
     }
@@ -418,91 +389,10 @@ public class CategoryControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when category id is not valid.")
     void getBooksByCategoryId_NoValidCategoryId_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(get(URL_GET_BOOKS_BY_INVALID_CATEGORY_ID),
+        MvcResult result = createMvcResult(mockMvc, get(URL_GET_BOOKS_BY_INVALID_CATEGORY_ID),
                 status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
-                "Can't get books with category ID: " + INVALID_CATEGORY_ID);
-    }
-
-    private MvcResult createMvcResult(MockHttpServletRequestBuilder requestBuilder,
-                                      ResultMatcher expectedStatus) throws Exception {
-        return mockMvc.perform(requestBuilder)
-                .andExpect(expectedStatus)
-                .andReturn();
-    }
-
-    private MvcResult createJsonMvcResult(MockHttpServletRequestBuilder requestBuilder,
-                                          ResultMatcher expectedStatus,
-                                          String jsonRequest) throws Exception {
-        return mockMvc.perform(requestBuilder
-                        .content(jsonRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(expectedStatus)
-                .andReturn();
-    }
-
-    private <T> List<T> parsePageContent(MvcResult result,
-                                         TypeReference<List<T>> typeRef) throws Exception {
-        JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
-        return objectMapper.readValue(root.get("content").toString(), typeRef);
-    }
-
-    private void assertListCategoryDtosAreEqual(List<CategoryDto> expected,
-                                                List<CategoryDto> actual) {
-        assertThat(actual).isNotNull();
-        assertThat(actual.size()).isEqualTo(expected.size());
-        assertThat(actual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
-                .containsExactlyInAnyOrderElementsOf(expected);
-    }
-
-    private void assertCategoryDtosAreEqual(CategoryDto expected, CategoryDto actual) {
-        assertThat(actual).isNotNull();
-        assertThat(actual.id()).isNotNull();
-        assertThat(actual)
-                .usingRecursiveComparison()
-                .ignoringFields("id")
-                .isEqualTo(expected);
-    }
-
-    private void assertErrorResponse(MvcResult result,
-                                     int expectedStatus,
-                                     String expectedMessage) throws Exception {
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
-
-        assertThat(body.get("status").asInt()).isEqualTo(expectedStatus);
-        assertThat(body.get("message").asText()).isEqualTo(expectedMessage);
-        assertThat(body.get("timestamp").asText()).isNotBlank();
-    }
-
-    private void assertListErrorResponse(MvcResult result,
-                                         List<String> expectedErrorMessages) throws Exception {
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
-
-        JsonNode errors = body.get("message");
-        assertThat(errors).isNotNull();
-        List<String> actualErrorMessages = new ArrayList<>();
-        errors.forEach(error -> actualErrorMessages.add(error.asText()));
-
-        assertThat(body.get("status").asInt()).isEqualTo(BAD_REQUEST);
-        assertThat(body.get("timestamp").asText()).isNotBlank();
-        assertThat(actualErrorMessages).containsExactlyInAnyOrderElementsOf(expectedErrorMessages);
-    }
-
-    private CreateCategoryRequestDto createTestCategoryRequestDto(CategoryDto categoryDto) {
-        return new CreateCategoryRequestDto(categoryDto.name(), categoryDto.description());
-    }
-
-    private CategoryDto createTestInvalidCategoryDto() {
-        int maxCategoryDescriptionLength = 500;
-        return new CategoryDto(
-                VALID_CATEGORY_ID,
-                "IT",
-                "T".repeat(maxCategoryDescriptionLength + 1));
-    }
-
-    private CategoryDto createTestUpdatedCategoryDto(Long id) {
-        return new CategoryDto(id, "Updated name", "Updated description");
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can't get books with category ID: " + NOT_EXISTING_CATEGORY_ID);
     }
 }

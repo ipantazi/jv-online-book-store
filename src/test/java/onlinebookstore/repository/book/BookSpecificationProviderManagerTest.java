@@ -1,5 +1,7 @@
 package onlinebookstore.repository.book;
 
+import static onlinebookstore.util.repository.RepositoryTestDataUtil.INVALID_KEY;
+import static onlinebookstore.util.repository.RepositoryTestDataUtil.KEY_TITLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
@@ -19,29 +21,27 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class BookSpecificationProviderManagerTest {
-    private static final String KEY = "title";
-    private static final String INVALID_KEY = "invalid";
     @Mock
-    private SpecificationProvider<Book> expected;
+    private SpecificationProvider<Book> expectedProvider;
     private BookSpecificationProviderManager manager;
 
     @BeforeEach
     void setUp() {
-        List<SpecificationProvider<Book>> providers = List.of(expected);
+        List<SpecificationProvider<Book>> providers = List.of(expectedProvider);
         manager = new BookSpecificationProviderManager(providers);
 
-        when(expected.getKey()).thenReturn(KEY);
+        when(expectedProvider.getKey()).thenReturn(KEY_TITLE);
     }
 
     @Test
     @DisplayName("Verify getSpecificationProviders() method works.")
     public void getSpecificationProviders_ValidKey_ReturnsSpecificationProviders() {
-        SpecificationProvider<Book> actual = manager.getSpecificationProvider(KEY);
+        SpecificationProvider<Book> actual = manager.getSpecificationProvider(KEY_TITLE);
 
         assertThat(actual).isNotNull();
-        assertThat(actual.getKey()).isEqualTo(KEY);
-        assertThat(actual).isEqualTo(expected);
-        verify(expected, times(2)).getKey();
+        assertThat(actual.getKey()).isEqualTo(KEY_TITLE);
+        assertThat(actual).isEqualTo(expectedProvider);
+        verify(expectedProvider, times(2)).getKey();
     }
 
     @Test
@@ -51,6 +51,6 @@ public class BookSpecificationProviderManagerTest {
                 .isInstanceOf(DataProcessingException.class)
                 .hasMessage("Can't find correct specification provider for key: " + INVALID_KEY);
 
-        verify(expected, times(1)).getKey();
+        verify(expectedProvider, times(1)).getKey();
     }
 }

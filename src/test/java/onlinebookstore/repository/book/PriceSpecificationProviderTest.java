@@ -1,5 +1,6 @@
 package onlinebookstore.repository.book;
 
+import static onlinebookstore.util.repository.RepositoryTestDataUtil.KEY_PRICE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,7 +28,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 public class PriceSpecificationProviderTest {
-    private static final String EXPECTED_KEY = "price";
     private static final BigDecimal FROM_PRICE = BigDecimal.ONE;
     private static final BigDecimal TO_PRICE = BigDecimal.TEN;
     private static final List<BigDecimal> PRICE_RANGE = List.of(FROM_PRICE, TO_PRICE);
@@ -45,15 +45,14 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify getKey() method works.")
     public void getKey_ReturnsCorrectKey() {
-        assertThat(provider.getKey()).isEqualTo(EXPECTED_KEY);
+        assertThat(provider.getKey()).isEqualTo(KEY_PRICE);
     }
 
     @Test
     @DisplayName("Verify two prices create BETWEEN clause.")
     public void getSpecification_ValidTwoParams_CreatesBetweenClause() {
         Predicate expectedPredicate = mock(Predicate.class);
-
-        when(root.<BigDecimal>get(EXPECTED_KEY)).thenReturn(path);
+        when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.between(path, FROM_PRICE, TO_PRICE))
                 .thenReturn(expectedPredicate);
 
@@ -63,7 +62,7 @@ public class PriceSpecificationProviderTest {
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
         assertThat(actualPredicate).isEqualTo(expectedPredicate);
-        verify(root, times(1)).get(EXPECTED_KEY);
+        verify(root, times(1)).get(KEY_PRICE);
         verify(criteriaBuilder, times(1)).between(path, FROM_PRICE, TO_PRICE);
         verifyNoMoreInteractions(root, criteriaBuilder);
     }
@@ -72,8 +71,7 @@ public class PriceSpecificationProviderTest {
     @DisplayName("Verify first price value is treated as minimum price.")
     public void getSpecification_ValidFistPrice_CreatesGreaterThanOrEqualToMinimumPrice() {
         Predicate expectedPredicate = mock(Predicate.class);
-
-        when(root.<BigDecimal>get(EXPECTED_KEY)).thenReturn(path);
+        when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.greaterThanOrEqualTo(path, FROM_PRICE))
                 .thenReturn(expectedPredicate);
 
@@ -83,7 +81,7 @@ public class PriceSpecificationProviderTest {
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
         assertThat(actualPredicate).isEqualTo(expectedPredicate);
-        verify(root, times(1)).get(EXPECTED_KEY);
+        verify(root, times(1)).get(KEY_PRICE);
         verify(criteriaBuilder, times(1)).greaterThanOrEqualTo(path, FROM_PRICE);
         verifyNoMoreInteractions(root, criteriaBuilder);
     }
@@ -92,8 +90,7 @@ public class PriceSpecificationProviderTest {
     @DisplayName("Verify second price value is treated as maximum price.")
     public void getSpecification_ValidSecondPrice_CreatesLessThanOrEqualToMaximumPrice() {
         Predicate expectedPredicate = mock(Predicate.class);
-
-        when(root.<BigDecimal>get(EXPECTED_KEY)).thenReturn(path);
+        when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.lessThanOrEqualTo(path, TO_PRICE)).thenReturn(expectedPredicate);
 
         Specification<Book> actualSpecification = provider
@@ -103,7 +100,7 @@ public class PriceSpecificationProviderTest {
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
         assertThat(actualPredicate).isEqualTo(expectedPredicate);
-        verify(root, times(1)).get(EXPECTED_KEY);
+        verify(root, times(1)).get(KEY_PRICE);
         verify(criteriaBuilder, times(1)).lessThanOrEqualTo(path, TO_PRICE);
         verifyNoMoreInteractions(root, criteriaBuilder);
     }

@@ -1,7 +1,39 @@
 package onlinebookstore.controller.book;
 
+import static onlinebookstore.util.TestDataUtil.EXISTING_BOOK_ID;
+import static onlinebookstore.util.TestDataUtil.EXPECTED_BOOK_DTOS_SIZE;
+import static onlinebookstore.util.TestDataUtil.NEW_BOOK_ID;
+import static onlinebookstore.util.TestDataUtil.NOT_EXISTING_BOOK_ID;
+import static onlinebookstore.util.TestDataUtil.NOT_EXISTING_ISBN;
+import static onlinebookstore.util.TestDataUtil.SAFE_DELETED_BOOK_ID;
+import static onlinebookstore.util.TestDataUtil.TEST_LONG_DATA;
+import static onlinebookstore.util.TestDataUtil.createTestBookDto;
+import static onlinebookstore.util.TestDataUtil.createTestBookDtoList;
+import static onlinebookstore.util.TestDataUtil.createTestBookRequestDto;
+import static onlinebookstore.util.TestDataUtil.createTestInvalidBookDto;
+import static onlinebookstore.util.TestDataUtil.createTestUpdatedBookDto;
+import static onlinebookstore.util.TestDataUtil.fillCategoryCache;
+import static onlinebookstore.util.assertions.BookAssertionsUtil.assertBookDtosAreEqual;
+import static onlinebookstore.util.assertions.BookAssertionsUtil.assertErrorResponse;
+import static onlinebookstore.util.assertions.BookAssertionsUtil.assertListBookDtosAreEqual;
+import static onlinebookstore.util.assertions.BookAssertionsUtil.assertListErrorsResponse;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.EXPECTED_BOOK_ERRORS;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.EXPECTED_BOOK_NULL_ERRORS;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.NOT_FOUND;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.NO_CONTENT;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.UNPROCESSABLE_ENTITY;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_BOOKS;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_INVALID_BOOK_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_SAFE_DELETED_BOOK_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_SEARCH;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.URL_VALID_BOOK_ID;
+import static onlinebookstore.util.controller.ControllerTestDataUtil.expectedSearchErrorMessages;
+import static onlinebookstore.util.controller.ControllerTestUtil.parsePageContent;
+import static onlinebookstore.util.controller.ControllerTestUtil.parseResultToList;
+import static onlinebookstore.util.controller.DatabaseTestUtil.executeSqlScript;
+import static onlinebookstore.util.controller.MvcTestHelper.createJsonMvcResult;
+import static onlinebookstore.util.controller.MvcTestHelper.createMvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,116 +41,50 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.LongStream;
 import javax.sql.DataSource;
 import lombok.SneakyThrows;
 import onlinebookstore.dto.book.BookDto;
 import onlinebookstore.dto.book.BookSearchParametersDto;
 import onlinebookstore.dto.book.CreateBookRequestDto;
 import onlinebookstore.repository.category.CategoryRepository;
-import onlinebookstore.service.category.CategoryServiceImpl;
+import onlinebookstore.util.controller.MockMvcUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultMatcher;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BookControllerTest {
     protected static MockMvc mockMvc;
-    private static final Long VALID_BOOK_ID = 101L;
-    private static final Long SAFE_DELETED_BOOK_ID = 104L;
-    private static final Long ID_NEW_BOOK = 105L;
-    private static final Long INVALID_BOOK_ID = 999L;
-    private static final Long CATEGORY_ID = 101L;
-    private static final Long UPDATE_CATEGORY_ID = 102L;
-    private static final int EXPECTED_SIZE = 3;
-    private static final int NO_CONTENT = HttpStatus.NO_CONTENT.value();
-    private static final int BAD_REQUEST = HttpStatus.BAD_REQUEST.value();
-    private static final int NOT_FOUND = HttpStatus.NOT_FOUND.value();
-    private static final int UNPROCESSABLE_ENTITY = HttpStatus.UNPROCESSABLE_ENTITY.value();
-    private static final String INVALID_ISBN = "9999999999999";
-    private static final String DEFAULT_URL = "/books";
-    private static final String URL_SEARCH = "/books/search";
-    private static final String URL_VALID_BOOK_ID = "/books/" + VALID_BOOK_ID;
-    private static final String URL_INVALID_BOOK_ID = "/books/" + INVALID_BOOK_ID;
-    private static final String URL_SAFE_DELETED_BOOK_ID = "/books/" + SAFE_DELETED_BOOK_ID;
-    private static final List<String> expectedSearchErrorMessages = List.of(
-            "title Invalid title. Size should not exceed 100 characters.",
-            "author Invalid author. Size should not exceed 50 characters.",
-            "isbn Invalid ISBN format. Only digits and dashes. "
-                    + "Size should not exceed 13 characters.",
-            "priceRange[0] Invalid price. Value should be positive.",
-            "priceRange[1] Invalid price. Value should be positive."
-    );
-    private static final List<String> expectedErrorMessages = List.of(
-            "title Invalid title. Size should be between 3 to 100.",
-            "author Invalid author. Size should be between 3 to 50.",
-            "isbn Invalid ISBN format. ISBN must contain exactly 10 or 13 digits, "
-                    + "with optional dashes.",
-            "price Invalid price. Value should be positive.",
-            "coverImage Invalid URL. Please provide a valid UPL of cover image.",
-            "categoryIds[] Category Id shouldn't be null."
-    );
-    private static final List<String> expectedErrorNullMessages = List.of(
-            "title Invalid title. Title should not be blank.",
-            "author Invalid author. Author should not be blank.",
-            "isbn Invalid ISBN. ISBN should not be blank.",
-            "price Invalid price. Please enter price.",
-            "categoryIds Invalid categories. Categories shouldn't be empty."
-    );
-    private static List<BookDto> expectedBooksDtos;
+    private static List<BookDto> expectedBookDtos;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeAll
-    static void beforeAll(
-            @Autowired DataSource dataSource,
-            @Autowired WebApplicationContext applicationContext,
-            @Autowired CategoryRepository categoryRepository
-    ) throws SQLException {
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(applicationContext)
-                .apply(springSecurity())
-                .build();
+    static void beforeAll(@Autowired DataSource dataSource,
+                          @Autowired WebApplicationContext applicationContext,
+                          @Autowired CategoryRepository categoryRepository) {
+        mockMvc = MockMvcUtil.buildMockMvc(applicationContext);
 
         teardown(dataSource);
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            executeSqlScript(connection,
-                    "database/products/add-test-books-to-books-table.sql",
-                    "database/products/add-test-category-to-categories-table.sql",
-                    "database/products/add-test-dependencies-to-books-categories-table.sql");
-        }
-        categoryRepository.findAll().forEach(category ->
-                CategoryServiceImpl.categoriesCash.put(category.getId(), category));
+        executeSqlScript(dataSource,
+                    "database/books/add-test-books-to-books-table.sql",
+                    "database/categories/add-test-category-to-categories-table.sql",
+                    "database/bookscategories/add-test-dependencies-to-books-categories-table.sql");
 
-        expectedBooksDtos = LongStream.range(VALID_BOOK_ID, VALID_BOOK_ID + EXPECTED_SIZE)
-                .mapToObj(BookControllerTest::createTestBookDto)
-                .toList();
+        fillCategoryCache(categoryRepository);
+        expectedBookDtos = createTestBookDtoList(EXISTING_BOOK_ID, EXPECTED_BOOK_DTOS_SIZE);
     }
 
     @AfterAll
@@ -128,61 +94,41 @@ public class BookControllerTest {
 
     @SneakyThrows
     static void teardown(DataSource dataSource) {
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true);
-            executeSqlScript(connection,
-                    "database/products/clear-all-book-category-dependencies.sql",
-                    "database/products/clear-all-books.sql",
-                    "database/products/clear-all-categories.sql");
-        }
-    }
-
-    private static void executeSqlScript(Connection connection, String... scriptPaths) {
-        for (String path : scriptPaths) {
-            ScriptUtils.executeSqlScript(connection, new ClassPathResource(path));
-        }
-    }
-
-    static BookDto createTestBookDto(Long id) {
-        BookDto bookDto = new BookDto();
-        bookDto.setId(id);
-        bookDto.setTitle("Test Book " + id);
-        bookDto.setAuthor("Test Author " + id);
-        bookDto.setIsbn(String.valueOf(1000000000000L + id));
-        bookDto.setPrice(new BigDecimal(id));
-        bookDto.setDescription("Test Description");
-        bookDto.setCoverImage("http://example.com/test-cover.jpg");
-        bookDto.setCategoryIds(Set.of(CATEGORY_ID));
-        return bookDto;
+        executeSqlScript(dataSource,
+                    "database/bookscategories/clear-all-book-category-dependencies.sql",
+                    "database/books/clear-all-books.sql",
+                    "database/categories/clear-all-categories.sql");
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("All books must be returned except those safe deleted.")
     void getAll_GivenBooksCatalog_ShouldReturnAllBooks() throws Exception {
-        MvcResult result = createMvcResult(get(DEFAULT_URL), status().isOk());
+        MvcResult result = createMvcResult(mockMvc, get(URL_BOOKS), status().isOk());
 
-        List<BookDto> actualBookDtos = parsePageContent(result);
-        assertListBookDtosAreEqual(actualBookDtos, expectedBooksDtos);
+        List<BookDto> actualBookDtos = parsePageContent(result, objectMapper,
+                new TypeReference<List<BookDto>>() {});
+        assertListBookDtosAreEqual(actualBookDtos, expectedBookDtos);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @Sql(scripts = {
-            "classpath:database/products/clear-all-book-category-dependencies.sql",
-            "classpath:database/products/clear-all-books.sql"
+            "classpath:database/bookscategories/clear-all-book-category-dependencies.sql",
+            "classpath:database/books/clear-all-books.sql"
     },
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(scripts = {
-            "classpath:database/products/add-test-books-to-books-table.sql",
-            "classpath:database/products/add-test-dependencies-to-books-categories-table.sql"
+            "classpath:database/books/add-test-books-to-books-table.sql",
+            "classpath:database/bookscategories/add-test-dependencies-to-books-categories-table.sql"
     },
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Verify getAll() method returns empty page when no books exist.")
     void getAll_GivenEmptyCatalog_ShouldReturnEmptyPage() throws Exception {
-        MvcResult result = createMvcResult(get(DEFAULT_URL), status().isOk());
+        MvcResult result = createMvcResult(mockMvc, get(URL_BOOKS), status().isOk());
 
-        List<BookDto> actualBookDtos = parsePageContent(result);
+        List<BookDto> actualBookDtos = parsePageContent(result, objectMapper,
+                new TypeReference<List<BookDto>>() {});
         assertThat(actualBookDtos).isEmpty();
     }
 
@@ -190,21 +136,29 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for book by all parameters at once.")
     void searchBooks_FindByAllParams_Success() throws Exception {
-        int startIndex = 0;
-        int endIndex = 4;
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
+        String searchTitle = expectedBookDto.getTitle();
+        String searchAuthor = expectedBookDto.getAuthor();
+        String searchIsbn = expectedBookDto.getIsbn();
+        BigDecimal fromPrice = expectedBookDto.getPrice().subtract(BigDecimal.ONE);
+        BigDecimal toPrice = expectedBookDto.getPrice().add(BigDecimal.ONE);
         BookSearchParametersDto params = new BookSearchParametersDto(
-                expectedBookDto.getTitle().substring(startIndex, endIndex),
-                expectedBookDto.getAuthor().substring(startIndex, endIndex),
-                expectedBookDto.getIsbn().substring(
-                expectedBookDto.getIsbn().length() - endIndex),
-                List.of(expectedBookDto.getPrice().subtract(BigDecimal.ONE),
-                        expectedBookDto.getPrice().add(BigDecimal.ONE))
+                searchTitle,
+                searchAuthor,
+                searchIsbn,
+                List.of(fromPrice, toPrice)
         );
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("title", params.title())
+                .param("author", params.author())
+                .param("isbn", params.isbn())
+                .param("priceRange", params.priceRange().get(0).toString())
+                .param("priceRange", params.priceRange().get(1).toString()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(1).contains(expectedBookDto);
     }
@@ -213,13 +167,17 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for books by title.")
     void searchBooks_FindByTitleParam_Success() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                expectedBookDto.getTitle(), null, null, null);
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
+        String searchTitle = expectedBookDto.getTitle();
+        BookSearchParametersDto params = new BookSearchParametersDto(searchTitle, null, null,
+                null);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("title", params.title()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(1).contains(expectedBookDto);
     }
@@ -228,13 +186,17 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for books by author.")
     void searchBooks_FindByAuthorParam_Success() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                null, expectedBookDto.getAuthor(), null, null);
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
+        String searchAuthor = expectedBookDto.getAuthor();
+        BookSearchParametersDto params = new BookSearchParametersDto(null, searchAuthor, null,
+                null);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("author", params.author()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(1).contains(expectedBookDto);
     }
@@ -243,13 +205,16 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for books by isbn.")
     void searchBooks_FindByIsbnParam_Success() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                null, null, expectedBookDto.getIsbn(), null);
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
+        String searchIsbn = expectedBookDto.getIsbn();
+        BookSearchParametersDto params = new BookSearchParametersDto(null, null, searchIsbn, null);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("isbn", params.isbn()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(1).contains(expectedBookDto);
     }
@@ -258,14 +223,17 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for books by lower price.")
     void searchBooks_FindByLowerPriceParam_Success() throws Exception {
-        BookDto expectedBookDtoMiddlePrice = expectedBooksDtos.get(1);
-        BookDto expectedBookDtoHigherPrice = expectedBooksDtos.get(2);
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                null, null, null, List.of(expectedBookDtoMiddlePrice.getPrice()));
+        BookDto expectedBookDtoMiddlePrice = expectedBookDtos.get(1);
+        BookDto expectedBookDtoHigherPrice = expectedBookDtos.get(2);
+        List<BigDecimal> priceRange = List.of(expectedBookDtoMiddlePrice.getPrice());
+        BookSearchParametersDto params = new BookSearchParametersDto(null, null, null, priceRange);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("priceRange", params.priceRange().get(0).toString()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(2);
         assertThat(actualBookDtos).contains(expectedBookDtoMiddlePrice);
@@ -276,15 +244,19 @@ public class BookControllerTest {
     @Test
     @DisplayName("Search for books by two price.")
     void searchBooks_FindByTwoPriceParam_Success() throws Exception {
-        final BookDto expectedBookDtoLowerPrice = expectedBooksDtos.get(0);
-        final BookDto expectedBookDtoMiddlePrice = expectedBooksDtos.get(1);
+        final BookDto expectedBookDtoLowerPrice = expectedBookDtos.get(0);
+        final BookDto expectedBookDtoMiddlePrice = expectedBookDtos.get(1);
         List<BigDecimal> priceRange = List.of(expectedBookDtoLowerPrice.getPrice(),
                 expectedBookDtoMiddlePrice.getPrice());
         BookSearchParametersDto params = new BookSearchParametersDto(null, null, null, priceRange);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("priceRange", params.priceRange().get(0).toString())
+                        .param("priceRange", params.priceRange().get(1).toString()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).hasSize(2);
         assertThat(actualBookDtos).contains(expectedBookDtoMiddlePrice);
@@ -295,12 +267,15 @@ public class BookControllerTest {
     @Test
     @DisplayName("Verify searchBooks() method returns empty List when no find books.")
     void searchBooks_NoFindBooks_ShouldReturnEmptyList() throws Exception {
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                null, null, INVALID_ISBN, null);
+        BookSearchParametersDto params = new BookSearchParametersDto(null, null, NOT_EXISTING_ISBN,
+                null);
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("isbn", params.isbn()))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        List<BookDto> actualBookDtos = parseResultToList(result);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
         assertThat(actualBookDtos).isNotNull();
         assertThat(actualBookDtos).isEmpty();
     }
@@ -309,39 +284,41 @@ public class BookControllerTest {
     @Test
     @DisplayName("Verify searchBooks() method returns all books when no params set.")
     void searchBooks_NullAllParams_ShouldReturnAllBooks() throws Exception {
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                null, null, null, null);
+        MvcResult result = mockMvc.perform(get(URL_SEARCH))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        MvcResult result = createSearchMvcResult(params, status().isOk());
-
-        List<BookDto> actualBookDtos = parseResultToList(result);
-        assertListBookDtosAreEqual(actualBookDtos, expectedBooksDtos);
+        List<BookDto> actualBookDtos = parseResultToList(result, objectMapper);
+        assertListBookDtosAreEqual(actualBookDtos, expectedBookDtos);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Verify that an exception is throw when params is not valid.")
     void searchBooks_InvalidParams_ShouldThrowException() throws Exception {
-        int maxBookTitleLength = 100;
-        int maxBookAuthorLength = 50;
-        String invalidTitle = "T".repeat(maxBookTitleLength + 1);
-        String invalidAuthor = "T".repeat(maxBookAuthorLength + 1);
-        String invalidIsbn = "INVALID ISBN";
+        String invalidFormatIsbn = "INVALID ISBN";
         List<BigDecimal> priceRange = List.of(BigDecimal.ZERO, BigDecimal.ZERO);
-        BookSearchParametersDto params = new BookSearchParametersDto(
-                invalidTitle, invalidAuthor, invalidIsbn, priceRange);
+        BookSearchParametersDto params = new BookSearchParametersDto(TEST_LONG_DATA, TEST_LONG_DATA,
+                invalidFormatIsbn, priceRange);
 
-        MvcResult result = createSearchMvcResult(params, status().isBadRequest());
+        MvcResult result = mockMvc.perform(get(URL_SEARCH)
+                        .param("title", params.title())
+                        .param("author", params.author())
+                        .param("isbn", params.isbn())
+                        .param("priceRange", params.priceRange().get(0).toString())
+                        .param("priceRange", params.priceRange().get(1).toString()))
+                .andExpect(status().isBadRequest())
+                .andReturn();
 
-        assertListErrorsResponse(result, expectedSearchErrorMessages);
+        assertListErrorsResponse(result, objectMapper, expectedSearchErrorMessages);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Get book by id.")
     void getBookById_GivenBook_ShouldReturnBook() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
-        MvcResult result = createMvcResult(get(URL_VALID_BOOK_ID),status().isOk());
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
+        MvcResult result = createMvcResult(mockMvc, get(URL_VALID_BOOK_ID),status().isOk());
 
         BookDto actualBookDto = objectMapper.readValue(result.getResponse().getContentAsString(),
                 BookDto.class);
@@ -352,65 +329,73 @@ public class BookControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when book Id doesn't exist.")
     void getBookById_BookIdNotExist_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(get(URL_INVALID_BOOK_ID), status().isNotFound());
+        MvcResult result = createMvcResult(mockMvc, get(URL_INVALID_BOOK_ID),
+                status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND, "Can`t find the book by id: " + INVALID_BOOK_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can`t find the book by id: " + NOT_EXISTING_BOOK_ID);
     }
 
     @WithMockUser(username = "alice@example.com")
     @Test
     @DisplayName("Verify that an exception is throw when a book is safe deleted.")
     void getBookById_BookIsSafeDeleted_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(get(URL_SAFE_DELETED_BOOK_ID), status().isNotFound());
+        MvcResult result = createMvcResult(mockMvc, get(URL_SAFE_DELETED_BOOK_ID),
+                status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
                 "Can`t find the book by id: " + SAFE_DELETED_BOOK_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN", "USER"})
     @Test
-    @Sql(scripts = "classpath:database/products/restoring-book-id101-and-its-dependencies.sql",
+    @Sql(scripts = "classpath:database/books/restoring-book-id101-and-its-dependencies.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Delete book by id.")
     void deleteBookById_GivenValidBook_ShouldDeleteBook() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_VALID_BOOK_ID), status().isNoContent());
+        MvcResult result = createMvcResult(mockMvc, delete(URL_VALID_BOOK_ID),
+                status().isNoContent());
 
         assertThat(result.getResponse().getStatus()).isEqualTo(NO_CONTENT);
-        MvcResult checkResult = createMvcResult(get(URL_VALID_BOOK_ID), status().isNotFound());
-        assertErrorResponse(checkResult, NOT_FOUND, "Can`t find the book by id: " + VALID_BOOK_ID);
+        MvcResult checkResult = createMvcResult(mockMvc, get(URL_VALID_BOOK_ID),
+                status().isNotFound());
+        assertErrorResponse(checkResult, objectMapper, NOT_FOUND,
+                "Can`t find the book by id: " + EXISTING_BOOK_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN", "USER"})
     @Test
     @DisplayName("Verify that an exception is throw when book id doesn't exist.")
     void deleteBookById_BookIdNotExist_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_INVALID_BOOK_ID), status().isNotFound());
+        MvcResult result = createMvcResult(mockMvc, delete(URL_INVALID_BOOK_ID),
+                status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND, "Can't delete a book with ID: " + INVALID_BOOK_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can't delete a book with ID: " + NOT_EXISTING_BOOK_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN", "USER"})
     @Test
     @DisplayName("Verify that an exception is throw when a book is safe deleted.")
     void deleteBookById_BookIsSafeDeleted_ShouldReturnNotFound() throws Exception {
-        MvcResult result = createMvcResult(delete(URL_SAFE_DELETED_BOOK_ID),
+        MvcResult result = createMvcResult(mockMvc, delete(URL_SAFE_DELETED_BOOK_ID),
                 status().isNotFound());
 
-        assertErrorResponse(result, NOT_FOUND,
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
                 "Can't delete a book with ID: " + SAFE_DELETED_BOOK_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
-    @Sql(scripts = "classpath:database/products/remove-new-test-book-and-its-dependencies.sql",
+    @Sql(scripts = "classpath:database/books/remove-new-test-book-and-its-dependencies.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Create a new book.")
     void createBook_ValidRequestDto_Success() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(ID_NEW_BOOK);
+        BookDto expectedBookDto = createTestBookDto(NEW_BOOK_ID);
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isCreated(),
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_BOOKS), status().isCreated(),
                 jsonRequest);
 
         BookDto actualBookDto = objectMapper.readValue(result.getResponse().getContentAsString(),
@@ -422,14 +407,14 @@ public class BookControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when a book already exists.")
     void createBook_BookAlreadyExists_ShouldReturnUnprocessableEntity() throws Exception {
-        BookDto expectedBookDto = createTestBookDto(VALID_BOOK_ID);
+        BookDto expectedBookDto = createTestBookDto(EXISTING_BOOK_ID);
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isUnprocessableEntity(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_BOOKS),
+                status().isUnprocessableEntity(), jsonRequest);
 
-        assertErrorResponse(result, UNPROCESSABLE_ENTITY,
+        assertErrorResponse(result, objectMapper, UNPROCESSABLE_ENTITY,
                 "Can't save a book with this ISBN: " + requestDto.isbn());
     }
 
@@ -441,10 +426,10 @@ public class BookControllerTest {
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isUnprocessableEntity(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_BOOKS),
+                status().isUnprocessableEntity(), jsonRequest);
 
-        assertErrorResponse(result, UNPROCESSABLE_ENTITY,
+        assertErrorResponse(result, objectMapper, UNPROCESSABLE_ENTITY,
                 "Can't save a book with this ISBN: " + requestDto.isbn());
     }
 
@@ -456,10 +441,10 @@ public class BookControllerTest {
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isBadRequest(),
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_BOOKS), status().isBadRequest(),
                 jsonRequest);
 
-        assertListErrorsResponse(result, expectedErrorMessages);
+        assertListErrorsResponse(result, objectMapper, EXPECTED_BOOK_ERRORS);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
@@ -470,23 +455,23 @@ public class BookControllerTest {
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(post(DEFAULT_URL), status().isBadRequest(),
+        MvcResult result = createJsonMvcResult(mockMvc, post(URL_BOOKS), status().isBadRequest(),
                 jsonRequest);
 
-        assertListErrorsResponse(result, expectedErrorNullMessages);
+        assertListErrorsResponse(result, objectMapper, EXPECTED_BOOK_NULL_ERRORS);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
-    @Sql(scripts = "classpath:database/products/restoring-book-id101-and-its-dependencies.sql",
+    @Sql(scripts = "classpath:database/books/restoring-book-id101-and-its-dependencies.sql",
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     @DisplayName("Update the book.")
     void updateBook_ValidRequestDto_Success() throws Exception {
-        BookDto expectedBookDto = createTestUpdatedBookDto(VALID_BOOK_ID);
+        BookDto expectedBookDto = createTestUpdatedBookDto(EXISTING_BOOK_ID);
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_BOOK_ID), status().isOk(),
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_BOOK_ID), status().isOk(),
                 jsonRequest);
 
         BookDto actualBookDto = objectMapper.readValue(result.getResponse().getContentAsString(),
@@ -498,30 +483,31 @@ public class BookControllerTest {
     @Test
     @DisplayName("Verify that an exception is throw when book id is invalid.")
     void updateBook_InvalidBookId_ShouldReturnNotFound() throws Exception {
-        BookDto expectedBookDto = createTestUpdatedBookDto(INVALID_BOOK_ID);
+        BookDto expectedBookDto = createTestUpdatedBookDto(NOT_EXISTING_BOOK_ID);
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_INVALID_BOOK_ID), status().isNotFound(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_INVALID_BOOK_ID),
+                status().isNotFound(), jsonRequest);
 
-        assertErrorResponse(result, NOT_FOUND, "Can`t find the book by id: " + INVALID_BOOK_ID);
+        assertErrorResponse(result, objectMapper, NOT_FOUND,
+                "Can`t find the book by id: " + NOT_EXISTING_BOOK_ID);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
     @Test
     @DisplayName("Verify that an exception is throw when updated books has a different ISBN.")
     void updateBook_NotEqualIsbn_ShouldReturnNotFound() throws Exception {
-        BookDto expectedBookDto = createTestUpdatedBookDto(VALID_BOOK_ID);
-        expectedBookDto.setIsbn(INVALID_ISBN);
+        BookDto expectedBookDto = createTestUpdatedBookDto(EXISTING_BOOK_ID);
+        expectedBookDto.setIsbn(NOT_EXISTING_ISBN);
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_BOOK_ID), status().isNotFound(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_BOOK_ID),
+                status().isNotFound(), jsonRequest);
 
-        assertErrorResponse(result, NOT_FOUND, "Can't update the book. Invalid book id: "
-                + VALID_BOOK_ID + " or isbn: " + INVALID_ISBN);
+        assertErrorResponse(result, objectMapper, NOT_FOUND, "Can't update the book. "
+                + "Invalid book id: " + EXISTING_BOOK_ID + " or isbn: " + NOT_EXISTING_ISBN);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
@@ -532,10 +518,10 @@ public class BookControllerTest {
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_BOOK_ID), status().isBadRequest(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_BOOK_ID),
+                status().isBadRequest(), jsonRequest);
 
-        assertListErrorsResponse(result, expectedErrorMessages);
+        assertListErrorsResponse(result, objectMapper, EXPECTED_BOOK_ERRORS);
     }
 
     @WithMockUser(username = "bob@example.com", roles = {"ADMIN"})
@@ -546,150 +532,9 @@ public class BookControllerTest {
         CreateBookRequestDto requestDto = createTestBookRequestDto(expectedBookDto);
         String jsonRequest = objectMapper.writeValueAsString(requestDto);
 
-        MvcResult result = createJsonMvcResult(put(URL_VALID_BOOK_ID), status().isBadRequest(),
-                jsonRequest);
+        MvcResult result = createJsonMvcResult(mockMvc, put(URL_VALID_BOOK_ID),
+                status().isBadRequest(), jsonRequest);
 
-        assertListErrorsResponse(result, expectedErrorNullMessages);
-    }
-
-    private List<BookDto> parsePageContent(MvcResult result) throws Exception {
-        JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString());
-        return objectMapper.readValue(
-                root.get("content").toString(),
-                new TypeReference<>() {
-                }
-        );
-    }
-
-    private List<BookDto> parseResultToList(MvcResult result) throws Exception {
-        return objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {
-                }
-        );
-    }
-
-    private MvcResult createSearchMvcResult(BookSearchParametersDto params,
-                                            ResultMatcher expectedStatus) throws Exception {
-        MockHttpServletRequestBuilder request = get(URL_SEARCH);
-
-        if (params.title() != null) {
-            request = request.param("title", params.title());
-        }
-        if (params.author() != null) {
-            request = request.param("author", params.author());
-        }
-        if (params.isbn() != null) {
-            request = request.param("isbn", params.isbn());
-        }
-        if (params.priceRange() != null) {
-            List<BigDecimal> prices = params.priceRange();
-            if (!prices.isEmpty() && prices.get(0) != null) {
-                request = request.param("priceRange", prices.get(0).toString());
-            }
-            if (prices.size() >= 2 && prices.get(1) != null) {
-                request = request.param("priceRange", prices.get(1).toString());
-            }
-        }
-        return mockMvc.perform(request)
-                .andExpect(expectedStatus)
-                .andReturn();
-    }
-
-    private MvcResult createJsonMvcResult(MockHttpServletRequestBuilder requestBuilder,
-                                          ResultMatcher expectedStatus,
-                                          String jsonRequest) throws Exception {
-        return mockMvc.perform(requestBuilder
-                        .content(jsonRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(expectedStatus)
-                .andReturn();
-    }
-
-    private MvcResult createMvcResult(MockHttpServletRequestBuilder requestBuilder,
-                                      ResultMatcher expectedStatus) throws Exception {
-        return mockMvc.perform(requestBuilder)
-                .andExpect(expectedStatus)
-                .andReturn();
-    }
-
-    private void assertListBookDtosAreEqual(List<BookDto> actual, List<BookDto> expected) {
-        assertThat(actual).isNotNull();
-        assertThat(actual).hasSize(expected.size());
-        assertThat(actual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "categoryIds")
-                .containsExactlyInAnyOrderElementsOf(expected);
-    }
-
-    private void assertBookDtosAreEqual(BookDto actual, BookDto expected) {
-        assertThat(actual).isNotNull();
-        assertThat(actual.getId()).isNotNull();
-        assertThat(actual)
-                .usingRecursiveComparison()
-                .ignoringFields("id", "categoryIds")
-                .isEqualTo(expected);
-        assertThat(actual.getCategoryIds())
-                .containsExactlyInAnyOrderElementsOf(expected.getCategoryIds());
-    }
-
-    private void assertErrorResponse(MvcResult result,
-                                     int expectedStatus,
-                                     String expectedMessage) throws Exception {
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
-
-        assertThat(body.get("status").asInt()).isEqualTo(expectedStatus);
-        assertThat(body.get("message").asText()).isEqualTo(expectedMessage);
-        assertThat(body.get("timestamp").asText()).isNotBlank();
-    }
-
-    private void assertListErrorsResponse(MvcResult result,
-                                          List<String> expectedMessages) throws Exception {
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
-
-        JsonNode errors = body.get("message");
-        assertThat(errors).isNotNull();
-        List<String> actualErrorMessages = new ArrayList<>();
-        errors.forEach(error -> actualErrorMessages.add(error.asText()));
-
-        assertThat(body.get("status").asInt()).isEqualTo(BAD_REQUEST);
-        assertThat(body.get("timestamp").asText()).isNotBlank();
-        assertThat(actualErrorMessages).containsExactlyInAnyOrderElementsOf(expectedMessages);
-    }
-
-    private CreateBookRequestDto createTestBookRequestDto(BookDto bookDto) {
-        return new CreateBookRequestDto(
-                bookDto.getTitle(),
-                bookDto.getAuthor(),
-                bookDto.getIsbn(),
-                bookDto.getPrice(),
-                bookDto.getDescription(),
-                bookDto.getCoverImage(),
-                bookDto.getCategoryIds()
-        );
-    }
-
-    private BookDto createTestInvalidBookDto() {
-        BookDto bookDto = new BookDto();
-        bookDto.setId(VALID_BOOK_ID);
-        bookDto.setTitle("IT");
-        bookDto.setAuthor("IT");
-        bookDto.setIsbn("INVALID ISBN");
-        bookDto.setPrice(BigDecimal.ZERO);
-        bookDto.setCoverImage("Invalid cover image url");
-        Set<Long> categoryIds = new HashSet<>();
-        categoryIds.add(null);
-        bookDto.setCategoryIds(categoryIds);
-        return bookDto;
-    }
-
-    private BookDto createTestUpdatedBookDto(Long id) {
-        BookDto bookDto = createTestBookDto(id);
-        bookDto.setTitle("Updated Title");
-        bookDto.setAuthor("Updated Author");
-        bookDto.setPrice(BigDecimal.TEN);
-        bookDto.setDescription("Updated Description");
-        bookDto.setCoverImage("http://update_example.com/test-cover.jpg");
-        bookDto.setCategoryIds(Set.of(UPDATE_CATEGORY_ID));
-        return bookDto;
+        assertListErrorsResponse(result, objectMapper, EXPECTED_BOOK_NULL_ERRORS);
     }
 }

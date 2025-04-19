@@ -1,5 +1,7 @@
 package onlinebookstore.repository.book;
 
+import static onlinebookstore.util.repository.RepositoryTestDataUtil.KEY_TITLE;
+import static onlinebookstore.util.repository.RepositoryTestDataUtil.VALUE_FOR_SEARCH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,8 +30,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 public class TitleSpecificationProviderTest {
-    private static final String EXPECTED_KEY = "title";
-    private static final String EXPECTED_VALUE = "TEST";
     @Mock
     private Root<Book> root;
     @Mock
@@ -46,27 +46,26 @@ public class TitleSpecificationProviderTest {
     @Test
     @DisplayName("Verify getKey() method works.")
     public void getKey_ReturnsCorrectKey() {
-        assertThat(provider.getKey()).isNotNull().isEqualTo(EXPECTED_KEY);
+        assertThat(provider.getKey()).isNotNull().isEqualTo(KEY_TITLE);
     }
 
     @Test
     @DisplayName("Verify getSpecification() returns correct predicate")
     public void getSpecification_ValidParams_ReturnsCorrectSpecification() {
         Predicate expectedPredicate = mock(Predicate.class);
-
-        when(root.<String>get(EXPECTED_KEY)).thenReturn(path);
+        when(root.<String>get(KEY_TITLE)).thenReturn(path);
         when(criteriaBuilder.lower(path)).thenReturn(expression);
-        when(criteriaBuilder.like(expression, "%" + EXPECTED_VALUE.toLowerCase() + "%"))
+        when(criteriaBuilder.like(expression, "%" + VALUE_FOR_SEARCH.toLowerCase() + "%"))
                 .thenReturn(expectedPredicate);
 
-        Specification<Book> actualSpecification = provider.getSpecification(EXPECTED_VALUE);
+        Specification<Book> actualSpecification = provider.getSpecification(VALUE_FOR_SEARCH);
 
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
         assertThat(actualPredicate).isEqualTo(expectedPredicate);
         verify(criteriaBuilder, times(1)).lower(any());
-        verify(root, times(1)).get(EXPECTED_KEY);
+        verify(root, times(1)).get(KEY_TITLE);
         verify(criteriaBuilder, times(1)).like(any(), anyString());
         verifyNoMoreInteractions(criteriaBuilder, root, query);
     }

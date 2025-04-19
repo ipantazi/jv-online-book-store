@@ -1,9 +1,22 @@
 package onlinebookstore.service.category;
 
+import static onlinebookstore.util.TestDataUtil.EXISTING_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.EXPECTED_CATEGORIES_SIZE;
+import static onlinebookstore.util.TestDataUtil.NEW_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.NOT_EXISTING_CATEGORY_ID;
+import static onlinebookstore.util.TestDataUtil.createTestCategoriesSet;
+import static onlinebookstore.util.TestDataUtil.createTestCategory;
+import static onlinebookstore.util.TestDataUtil.createTestCategoryDto;
+import static onlinebookstore.util.TestDataUtil.createTestCategoryRequestDto;
+import static onlinebookstore.util.TestDataUtil.pageableCategory;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertAddingCategoriesCash;
+import static onlinebookstore.util.assertions.CategoryAssertionsUtil.assertCategoryDtosAreEqual;
+import static onlinebookstore.util.assertions.TestAssertionsUtil.assertPageMetadataEquals;
+import static onlinebookstore.util.service.category.CategoryMapperMockUtil.mockCategoryMapperUpdateBookEntity;
+import static onlinebookstore.util.service.category.CategoryTestUtil.mockCategoriesCash;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -11,11 +24,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
 import onlinebookstore.dto.category.CategoryDto;
 import onlinebookstore.dto.category.CreateCategoryRequestDto;
 import onlinebookstore.exception.DataProcessingException;
@@ -23,6 +35,7 @@ import onlinebookstore.exception.EntityNotFoundException;
 import onlinebookstore.mapper.CategoryMapper;
 import onlinebookstore.model.Category;
 import onlinebookstore.repository.category.CategoryRepository;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,53 +45,40 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 public class CategoryServiceTest {
-    private static final int INDEX_FIRST = 0;
-    private static final Long INVALID_CATEGORY_ID = 999L;
-    private static final String FIELD_ID = "id";
-    private final Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
+    private static Set<Category> testCategories;
     @Mock
     private CategoryRepository categoryRepository;
     @Mock
     private CategoryMapper categoryMapper;
     @InjectMocks
     private CategoryServiceImpl categoryService;
-    private Category expectedCategory;
-    private List<Category> categoriesList;
     private Map<Long, Category> categoriesCash;
+
+    @BeforeAll
+    static void beforeAll() {
+        testCategories = createTestCategoriesSet(EXISTING_CATEGORY_ID, EXPECTED_CATEGORIES_SIZE);
+    }
 
     @BeforeEach
     void setUp() throws Exception {
-        expectedCategory = createStubCategory();
-        categoriesList = List.of(expectedCategory);
-
-        Field field = CategoryServiceImpl.class.getDeclaredField("categoriesCash");
-        field.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        Map<Long, Category> cashInstance = (Map<Long, Category>) field.get(null);
-        cashInstance.clear();
-        cashInstance.putAll(categoriesList.stream()
-                .collect(Collectors.toMap(Category::getId, category -> category)));
-        categoriesCash = cashInstance;
+        categoriesCash = mockCategoriesCash(testCategories);
     }
 
     @Test
     @DisplayName("Verify initializeCategoriesCash() method works.")
     public void initializeCategoriesCash_ValidCategories_AddToCategoriesCash() {
-        Category categoryForInitialize = createStubCategory();
+        final int expectedCategoriesCashSize = 1;
+        Category categoryForInitialize = createTestCategory(EXISTING_CATEGORY_ID);
         categoriesCash.clear();
         assertThat(categoriesCash).isEmpty();
-
         when(categoryRepository.findAll()).thenReturn(List.of(categoryForInitialize));
 
         categoryService.initializeCategoriesCash();
 
-        assertAddingCategoriesCash(1, categoryForInitialize);
+        assertAddingCategoriesCash(categoryForInitialize, expectedCategoriesCashSize);
         verify(categoryRepository, times(1)).findAll();
         verifyNoMoreInteractions(categoryRepository);
     }
@@ -99,65 +99,65 @@ public class CategoryServiceTest {
     @Test
     @DisplayName("Verify findAll() method works.")
     public void findAll_ValidPageable_ReturnsCategoryList() {
-        CategoryDto expectedCategoryDto = createTestCategoryDto(expectedCategory);
-        Page<Category> categoryPage = new PageImpl<>(categoriesList, pageable,
-                categoriesList.size());
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
+        Category category = createTestCategory(expectedCategoryDto);
+        List<Category> categories = List.of(category);
+        Page<Category> categoryPage = new PageImpl<>(categories, pageableCategory,
+                categories.size());
 
-        when(categoryRepository.findAll(pageable)).thenReturn(categoryPage);
-        when(categoryMapper.toCategoryDto(expectedCategory)).thenReturn(expectedCategoryDto);
+        when(categoryRepository.findAll(pageableCategory)).thenReturn(categoryPage);
+        when(categoryMapper.toCategoryDto(category)).thenReturn(expectedCategoryDto);
 
-        Page<CategoryDto> actualCategoryDtoPage = categoryService.findAll(pageable);
+        Page<CategoryDto> actualCategoryDtoPage = categoryService.findAll(pageableCategory);
         List<CategoryDto> actualCategoryDtos = actualCategoryDtoPage.getContent();
 
         assertThat(actualCategoryDtos).hasSize(1);
-        assertUsingRecursiveComparison(actualCategoryDtos.get(INDEX_FIRST), expectedCategoryDto);
-        assertPage(actualCategoryDtoPage, categoryPage);
-        verify(categoryRepository, times(1)).findAll(pageable);
-        verify(categoryMapper, times(1)).toCategoryDto(expectedCategory);
+        assertCategoryDtosAreEqual(actualCategoryDtos.get(0), expectedCategoryDto);
+        assertPageMetadataEquals(actualCategoryDtoPage, categoryPage);
+        verify(categoryRepository, times(1)).findAll(pageableCategory);
+        verify(categoryMapper, times(1)).toCategoryDto(category);
         verifyNoMoreInteractions(categoryRepository, categoryMapper);
     }
 
     @Test
     @DisplayName("Verify findAll() method returns empty page when no categories exist.")
     public void findAll_NoCategories_ReturnsEmptyPage() {
-        Page<Category> categoryPage = Page.empty(pageable);
+        Page<Category> categoryPage = Page.empty(pageableCategory);
+        when(categoryRepository.findAll(pageableCategory)).thenReturn(categoryPage);
 
-        when(categoryRepository.findAll(pageable)).thenReturn(categoryPage);
-
-        Page<CategoryDto> actualCategoryDtoPage = categoryService.findAll(pageable);
+        Page<CategoryDto> actualCategoryDtoPage = categoryService.findAll(pageableCategory);
 
         assertThat(actualCategoryDtoPage).isEmpty();
-        assertPage(actualCategoryDtoPage, categoryPage);
-        verify(categoryRepository, times(1)).findAll(pageable);
+        assertPageMetadataEquals(actualCategoryDtoPage, categoryPage);
+        verify(categoryRepository, times(1)).findAll(pageableCategory);
         verifyNoMoreInteractions(categoryRepository);
     }
 
     @Test
     @DisplayName("Verify getById() method works.")
     public void getById_ValidCategoryId_ReturnsCategoryDto() {
-        Long categoryId = expectedCategory.getId();
-        CategoryDto expectedCategoryDto = createTestCategoryDto(expectedCategory);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
+        Category category = createTestCategory(expectedCategoryDto);
+        when(categoryRepository.findById(EXISTING_CATEGORY_ID)).thenReturn(Optional.of(category));
+        when(categoryMapper.toCategoryDto(category)).thenReturn(expectedCategoryDto);
 
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(expectedCategory));
-        when(categoryMapper.toCategoryDto(expectedCategory)).thenReturn(expectedCategoryDto);
+        CategoryDto actualCategoryDto = categoryService.getById(EXISTING_CATEGORY_ID);
 
-        CategoryDto actualCategoryDto = categoryService.getById(categoryId);
-
-        assertUsingRecursiveComparison(actualCategoryDto, expectedCategoryDto);
-        verify(categoryRepository, times(1)).findById(categoryId);
-        verify(categoryMapper, times(1)).toCategoryDto(expectedCategory);
+        assertCategoryDtosAreEqual(actualCategoryDto, expectedCategoryDto);
+        verify(categoryRepository, times(1)).findById(EXISTING_CATEGORY_ID);
+        verify(categoryMapper, times(1)).toCategoryDto(category);
         verifyNoMoreInteractions(categoryRepository, categoryMapper);
     }
 
     @Test
     @DisplayName("Verify that an exception is throw when category doesn't exist.")
     public void getById_CategoryNotExist_ThrowsException() {
-        when(categoryRepository.findById(INVALID_CATEGORY_ID)).thenReturn(Optional.empty());
+        when(categoryRepository.findById(NOT_EXISTING_CATEGORY_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> categoryService.getById(INVALID_CATEGORY_ID))
+        assertThatThrownBy(() -> categoryService.getById(NOT_EXISTING_CATEGORY_ID))
                 .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Can't find the category by id: " + INVALID_CATEGORY_ID);
-        verify(categoryRepository, times(1)).findById(INVALID_CATEGORY_ID);
+                .hasMessage("Can't find the category by id: " + NOT_EXISTING_CATEGORY_ID);
+        verify(categoryRepository, times(1)).findById(NOT_EXISTING_CATEGORY_ID);
         verifyNoMoreInteractions(categoryRepository);
     }
 
@@ -165,24 +165,24 @@ public class CategoryServiceTest {
     @DisplayName("Verify save() method works.")
     public void save_ValidCreateCategoryRequestDto_ReturnsCategoryDto() {
         final int expectedCategoriesCashSize = categoriesCash.size() + 1;
-        Category newCategory = createStubCategory();
-        CreateCategoryRequestDto categoryRequestDto =
-                createTestCategoryRequestDto(newCategory);
-        CategoryDto expectedCategoryDto = createTestCategoryDto(newCategory);
-
-        when(categoryRepository.existsByNameIgnoreCase(newCategory.getName())).thenReturn(false);
-        when(categoryMapper.toCategoryEntity(categoryRequestDto)).thenReturn(newCategory);
-        when(categoryRepository.save(newCategory)).thenReturn(newCategory);
-        when(categoryMapper.toCategoryDto(newCategory)).thenReturn(expectedCategoryDto);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(NEW_CATEGORY_ID);
+        String categoryName = expectedCategoryDto.name();
+        Category category = createTestCategory(expectedCategoryDto);
+        CreateCategoryRequestDto categoryRequestDto = createTestCategoryRequestDto(
+                expectedCategoryDto);
+        when(categoryRepository.existsByNameIgnoreCase(categoryName)).thenReturn(false);
+        when(categoryMapper.toCategoryEntity(categoryRequestDto)).thenReturn(category);
+        when(categoryRepository.save(category)).thenReturn(category);
+        when(categoryMapper.toCategoryDto(category)).thenReturn(expectedCategoryDto);
 
         CategoryDto actualCategoryDto = categoryService.save(categoryRequestDto);
 
-        assertUsingRecursiveComparison(actualCategoryDto, expectedCategoryDto);
-        assertAddingCategoriesCash(expectedCategoriesCashSize, newCategory);
-        verify(categoryRepository, times(1)).existsByNameIgnoreCase(newCategory.getName());
+        assertCategoryDtosAreEqual(actualCategoryDto, expectedCategoryDto);
+        assertAddingCategoriesCash(category, expectedCategoriesCashSize);
+        verify(categoryRepository, times(1)).existsByNameIgnoreCase(categoryName);
         verify(categoryMapper, times(1)).toCategoryEntity(categoryRequestDto);
-        verify(categoryRepository, times(1)).save(newCategory);
-        verify(categoryMapper, times(1)).toCategoryDto(newCategory);
+        verify(categoryRepository, times(1)).save(category);
+        verify(categoryMapper, times(1)).toCategoryDto(category);
         verifyNoMoreInteractions(categoryRepository, categoryMapper);
     }
 
@@ -190,18 +190,19 @@ public class CategoryServiceTest {
     @DisplayName("Verify that an exception is throw when a category already exist.")
     public void save_CategoryAlreadyExist_ThrowsException() {
         int expectedCategoriesCashSize = categoriesCash.size();
-        CreateCategoryRequestDto categoryRequestDto =
-                createTestCategoryRequestDto(expectedCategory);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
+        String categoryName = expectedCategoryDto.name();
+        CreateCategoryRequestDto categoryRequestDto = createTestCategoryRequestDto(
+                expectedCategoryDto);
 
-        when(categoryRepository.existsByNameIgnoreCase(expectedCategory.getName()))
-                .thenReturn(true);
+        when(categoryRepository.existsByNameIgnoreCase(categoryName)).thenReturn(true);
 
         assertThatThrownBy(() -> categoryService.save(categoryRequestDto))
                 .isInstanceOf(DataProcessingException.class)
-                .hasMessage("Can't save category with name: " + expectedCategory.getName());
+                .hasMessage("Can't save category with name: " + categoryName);
 
         assertThat(categoriesCash).hasSize(expectedCategoriesCashSize);
-        verify(categoryRepository, times(1)).existsByNameIgnoreCase(expectedCategory.getName());
+        verify(categoryRepository, times(1)).existsByNameIgnoreCase(categoryName);
         verify(categoryRepository, never()).save(any(Category.class));
         verifyNoMoreInteractions(categoryRepository);
         verifyNoInteractions(categoryMapper);
@@ -211,30 +212,28 @@ public class CategoryServiceTest {
     @DisplayName("Verify update() method works.")
     public void update_ValidIdAndCategoryRequestDto_ReturnsCategoryDto() {
         final int expectedCategoriesCashSize = categoriesCash.size();
-        final CreateCategoryRequestDto categoryRequestDto =
-                createTestCategoryRequestDto(expectedCategory);
-        final CategoryDto expectedCategoryDto = createTestCategoryDto(expectedCategory);
-        Long categoryId = expectedCategory.getId();
         String dataBeforeUpdate = "before update";
+        CategoryDto expectedCategoryDto = createTestCategoryDto(EXISTING_CATEGORY_ID);
+        Category category = createTestCategory(expectedCategoryDto);
+        final CreateCategoryRequestDto categoryRequestDto = createTestCategoryRequestDto(
+                expectedCategoryDto);
+        category.setName(dataBeforeUpdate);
+        category.setDescription(dataBeforeUpdate);
+        when(categoryRepository.findById(EXISTING_CATEGORY_ID)).thenReturn(Optional.of(category));
+        mockCategoryMapperUpdateBookEntity(categoryMapper, categoryRequestDto, category);
+        when(categoryRepository.save(category)).thenReturn(category);
+        when(categoryMapper.toCategoryDto(category)).thenReturn(expectedCategoryDto);
 
-        expectedCategory.setName(dataBeforeUpdate);
-        expectedCategory.setDescription(dataBeforeUpdate);
+        CategoryDto actualCategoryDto = categoryService.update(EXISTING_CATEGORY_ID,
+                categoryRequestDto);
 
-        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(expectedCategory));
-        mockCategoryMapperUpdateCategoryEntity(categoryRequestDto, expectedCategory,
-                dataBeforeUpdate);
-        when(categoryRepository.save(expectedCategory)).thenReturn(expectedCategory);
-        when(categoryMapper.toCategoryDto(expectedCategory)).thenReturn(expectedCategoryDto);
-
-        CategoryDto actualCategoryDto = categoryService.update(categoryId, categoryRequestDto);
-
-        assertUsingRecursiveComparison(actualCategoryDto, expectedCategoryDto);
-        assertAddingCategoriesCash(expectedCategoriesCashSize, expectedCategory);
-        verify(categoryRepository, times(1)).findById(categoryId);
+        assertCategoryDtosAreEqual(actualCategoryDto, expectedCategoryDto);
+        assertAddingCategoriesCash(category, expectedCategoriesCashSize);
+        verify(categoryRepository, times(1)).findById(EXISTING_CATEGORY_ID);
         verify(categoryMapper, times(1))
-                .updateCategoryEntity(expectedCategory, categoryRequestDto);
-        verify(categoryRepository, times(1)).save(expectedCategory);
-        verify(categoryMapper, times(1)).toCategoryDto(expectedCategory);
+                .updateCategoryEntity(category, categoryRequestDto);
+        verify(categoryRepository, times(1)).save(category);
+        verify(categoryMapper, times(1)).toCategoryDto(category);
         verifyNoMoreInteractions(categoryRepository, categoryMapper);
     }
 
@@ -242,18 +241,22 @@ public class CategoryServiceTest {
     @DisplayName("Verify that an exception is throw when a category doesn't exist.")
     public void update_CategoryNotExist_ThrowsException() {
         int expectedCategoriesCashSize = categoriesCash.size();
-        CreateCategoryRequestDto categoryRequestDto =
-                createTestCategoryRequestDto(expectedCategory);
+        CategoryDto expectedCategoryDto = createTestCategoryDto(NOT_EXISTING_CATEGORY_ID);
+        CreateCategoryRequestDto categoryRequestDto = createTestCategoryRequestDto(
+                expectedCategoryDto);
+        when(categoryRepository.findById(NOT_EXISTING_CATEGORY_ID)).thenReturn(Optional.empty());
 
-        when(categoryRepository.findById(INVALID_CATEGORY_ID)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> categoryService.update(INVALID_CATEGORY_ID, categoryRequestDto))
+        assertThatThrownBy(() -> categoryService.update(
+                NOT_EXISTING_CATEGORY_ID,
+                categoryRequestDto
+        ))
                 .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Can't find the category by id: " + INVALID_CATEGORY_ID);
+                .hasMessage("Can't find the category by id: " + NOT_EXISTING_CATEGORY_ID);
+
         assertThat(categoriesCash).hasSize(expectedCategoriesCashSize);
-        assertThat(categoriesCash).doesNotContainKey(INVALID_CATEGORY_ID);
+        assertThat(categoriesCash).doesNotContainKey(NOT_EXISTING_CATEGORY_ID);
         verify(categoryRepository, never()).save(any(Category.class));
-        verify(categoryRepository, times(1)).findById(INVALID_CATEGORY_ID);
+        verify(categoryRepository, times(1)).findById(NOT_EXISTING_CATEGORY_ID);
         verifyNoMoreInteractions(categoryRepository);
         verifyNoInteractions(categoryMapper);
     }
@@ -262,16 +265,14 @@ public class CategoryServiceTest {
     @DisplayName("Verify deleteById() method works.")
     public void deleteById_ValidCategoryID_SafeDelete() {
         final int expectedCategoriesCashSize = categoriesCash.size() - 1;
-        Long categoryId = expectedCategory.getId();
+        when(categoryRepository.existsById(EXISTING_CATEGORY_ID)).thenReturn(true);
 
-        when(categoryRepository.existsById(categoryId)).thenReturn(true);
-
-        categoryService.deleteById(categoryId);
+        categoryService.deleteById(EXISTING_CATEGORY_ID);
 
         assertThat(categoriesCash).hasSize(expectedCategoriesCashSize);
-        assertThat(categoriesCash).doesNotContainKey(categoryId);
-        verify(categoryRepository, times(1)).existsById(categoryId);
-        verify(categoryRepository, times(1)).deleteById(categoryId);
+        assertThat(categoriesCash).doesNotContainKey(EXISTING_CATEGORY_ID);
+        verify(categoryRepository, times(1)).existsById(EXISTING_CATEGORY_ID);
+        verify(categoryRepository, times(1)).deleteById(EXISTING_CATEGORY_ID);
         verifyNoMoreInteractions(categoryRepository);
     }
 
@@ -279,80 +280,16 @@ public class CategoryServiceTest {
     @DisplayName("Verify that an exception is throw when a category doesn't exist.")
     public void deleteById_CategoryNotExist_ThrowsException() {
         int expectedCategoriesCashSize = categoriesCash.size();
+        when(categoryRepository.existsById(NOT_EXISTING_CATEGORY_ID)).thenReturn(false);
 
-        when(categoryRepository.existsById(INVALID_CATEGORY_ID)).thenReturn(false);
-
-        assertThatThrownBy(() -> categoryService.deleteById(INVALID_CATEGORY_ID))
+        assertThatThrownBy(() -> categoryService.deleteById(NOT_EXISTING_CATEGORY_ID))
         .isInstanceOf(EntityNotFoundException.class)
-                .hasMessage("Can't delete a category with id: " + INVALID_CATEGORY_ID);
+                .hasMessage("Can't delete a category with id: " + NOT_EXISTING_CATEGORY_ID);
+
         assertThat(categoriesCash).hasSize(expectedCategoriesCashSize);
-        assertThat(categoriesCash).doesNotContainKey(INVALID_CATEGORY_ID);
-        verify(categoryRepository, times(1)).existsById(INVALID_CATEGORY_ID);
-        verify(categoryRepository, never()).deleteById(INVALID_CATEGORY_ID);
+        assertThat(categoriesCash).doesNotContainKey(NOT_EXISTING_CATEGORY_ID);
+        verify(categoryRepository, times(1)).existsById(NOT_EXISTING_CATEGORY_ID);
+        verify(categoryRepository, never()).deleteById(NOT_EXISTING_CATEGORY_ID);
         verifyNoMoreInteractions(categoryRepository);
-    }
-
-    private Category createStubCategory() {
-        Long currentId = categoriesCash != null ? categoriesCash.size() + 1L : 1L;
-        Category category = new Category();
-        category.setId(currentId);
-        category.setName("Name category id: " + currentId);
-        category.setDescription("Description category id: " + currentId);
-        return category;
-    }
-
-    private CategoryDto createTestCategoryDto(Category category) {
-        return new CategoryDto(
-                category.getId(),
-                category.getName(),
-                category.getDescription()
-        );
-    }
-
-    private CreateCategoryRequestDto createTestCategoryRequestDto(Category category) {
-        return new CreateCategoryRequestDto(category.getName(), category.getDescription());
-    }
-
-    private void assertUsingRecursiveComparison(Object actual, Object expected) {
-        assertThat(actual).isNotNull();
-        assertThat(actual)
-                .usingRecursiveComparison()
-                .ignoringFields(FIELD_ID)
-                .isEqualTo(expected);
-    }
-
-    private void assertAddingCategoriesCash(int expectedSize, Category actual) {
-        assertThat(categoriesCash).hasSize(expectedSize);
-        assertThat(categoriesCash).containsKey(actual.getId());
-        assertUsingRecursiveComparison(actual, categoriesCash.get(actual.getId()));
-    }
-
-    private void assertPage(Page<CategoryDto> actual, Page<Category> expected) {
-        assertThat(actual.getTotalElements()).isEqualTo(expected.getTotalElements());
-        assertThat(actual.getSize()).isEqualTo(expected.getSize());
-        assertThat(actual.getSort()).isEqualTo(expected.getSort());
-        assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
-    }
-
-    private void mockCategoryMapperUpdateCategoryEntity(
-            CreateCategoryRequestDto createCategoryRequestDto,
-            Category category,
-            String dataBeforeUpdate
-    ) {
-        doAnswer(invocation -> {
-            Category entity = invocation.getArgument(0);
-            CreateCategoryRequestDto dto = invocation.getArgument(1);
-
-            assertThat(dto.name()).isNotEqualTo(entity.getName());
-            assertThat(dto.description()).isNotEqualTo(entity.getDescription());
-
-            entity.setName(dto.name());
-            entity.setDescription(dto.description());
-
-            assertThat(entity.getName()).isNotEqualTo(dataBeforeUpdate);
-            assertThat(dto.description()).isNotEqualTo(dataBeforeUpdate);
-
-            return null;
-        }).when(categoryMapper).updateCategoryEntity(category, createCategoryRequestDto);
     }
 }
