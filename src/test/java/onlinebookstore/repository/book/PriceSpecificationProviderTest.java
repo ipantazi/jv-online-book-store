@@ -51,13 +51,16 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify two prices create BETWEEN clause.")
     public void getSpecification_ValidTwoParams_CreatesBetweenClause() {
+        // Given
         Predicate expectedPredicate = mock(Predicate.class);
         when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.between(path, FROM_PRICE, TO_PRICE))
                 .thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(PRICE_RANGE);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -70,13 +73,16 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify first price value is treated as minimum price.")
     public void getSpecification_ValidFistPrice_CreatesGreaterThanOrEqualToMinimumPrice() {
+        // Given
         Predicate expectedPredicate = mock(Predicate.class);
         when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.greaterThanOrEqualTo(path, FROM_PRICE))
                 .thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(List.of(FROM_PRICE));
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -89,13 +95,16 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify second price value is treated as maximum price.")
     public void getSpecification_ValidSecondPrice_CreatesLessThanOrEqualToMaximumPrice() {
+        // Given
         Predicate expectedPredicate = mock(Predicate.class);
         when(root.<BigDecimal>get(KEY_PRICE)).thenReturn(path);
         when(criteriaBuilder.lessThanOrEqualTo(path, TO_PRICE)).thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = provider
                 .getSpecification(Arrays.asList(null, TO_PRICE));
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -108,8 +117,10 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify specification is empty for empty price list.")
     public void getSpecification_EmptyList_ReturnsEmptySpecification() {
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(List.of());
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         assertThat(actualSpecification.toPredicate(root, query, criteriaBuilder)).isNull();
         verifyNoInteractions(criteriaBuilder);
@@ -118,9 +129,11 @@ public class PriceSpecificationProviderTest {
     @Test
     @DisplayName("Verify specification is empty for invalid price list.")
     public void getSpecification_InvalidPriceList_ReturnsEmptySpecification() {
+        // When
         Specification<Book> actualSpecification = provider
                 .getSpecification(List.of("TEST", "invalid data"));
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         assertThat(actualSpecification.toPredicate(root, query, criteriaBuilder)).isNull();
     }

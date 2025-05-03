@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version>
+        <version>3.4.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>Illia.Pantazi</groupId>
@@ -31,14 +31,25 @@
         <maven.checkstyle.plugin.configLocation>checkstyle.xml</maven.checkstyle.plugin.configLocation>
         <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
-        <lombok.version>1.18.36</lombok.version>
-        <liquibase.version>4.31.0</liquibase.version>
+        <lombok.version>1.18.38</lombok.version>
+        <liquibase.version>4.31.1</liquibase.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <webmvc-ui.version>2.8.4</webmvc-ui.version>
+        <webmvc-ui.version>2.8.6</webmvc-ui.version>
         <jjwt.version>0.12.6</jjwt.version>
         <assertj.version>4.0.0-M1</assertj.version>
-        <testcontainers.version>1.20.6</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -137,13 +148,6 @@
             <artifactId>junit-jupiter</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-bom</artifactId>
-            <version>${testcontainers.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>

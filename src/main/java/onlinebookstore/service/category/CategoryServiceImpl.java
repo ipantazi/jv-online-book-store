@@ -18,14 +18,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
-    public static final Map<Long, Category> categoriesCash = new HashMap<>();
+    public static final Map<Long, Category> categoriesCache = new HashMap<>();
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
     @PostConstruct
     public void initializeCategoriesCash() {
         categoryRepository.findAll().forEach(category -> {
-            categoriesCash.put(category.getId(), category);
+            categoriesCache.put(category.getId(), category);
         });
     }
 
@@ -47,7 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         Category category = categoryMapper.toCategoryEntity(categoryRequestDto);
         categoryRepository.save(category);
-        categoriesCash.put(category.getId(), category);
+        categoriesCache.put(category.getId(), category);
         return categoryMapper.toCategoryDto(category);
     }
 
@@ -56,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = findCategoryById(id);
         categoryMapper.updateCategoryEntity(category, categoryRequestDto);
         categoryRepository.save(category);
-        categoriesCash.put(category.getId(), category);
+        categoriesCache.put(category.getId(), category);
         return categoryMapper.toCategoryDto(category);
     }
 
@@ -66,7 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new EntityNotFoundException("Can't delete a category with id: " + id);
         }
         categoryRepository.deleteById(id);
-        categoriesCash.remove(id);
+        categoriesCache.remove(id);
     }
 
     private Category findCategoryById(Long id) {

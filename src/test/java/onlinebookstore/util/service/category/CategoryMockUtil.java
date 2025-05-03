@@ -7,7 +7,10 @@ import onlinebookstore.dto.category.CreateCategoryRequestDto;
 import onlinebookstore.mapper.CategoryMapper;
 import onlinebookstore.model.Category;
 
-public class CategoryMapperMockUtil {
+public class CategoryMockUtil {
+    private CategoryMockUtil() {
+    }
+
     public static void mockCategoryMapperUpdateBookEntity(
             CategoryMapper categoryMapper,
             CreateCategoryRequestDto createCategoryRequestDto,
