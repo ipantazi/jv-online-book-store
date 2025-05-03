@@ -24,9 +24,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @PostConstruct
     public void initializeCategoriesCash() {
-        categoryRepository.findAll().forEach(category -> {
-            categoriesCache.put(category.getId(), category);
-        });
+        categoryRepository.findAll().forEach(category ->
+                categoriesCache.put(category.getId(), category));
     }
 
     @Override

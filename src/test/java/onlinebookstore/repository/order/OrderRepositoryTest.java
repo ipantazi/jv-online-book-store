@@ -48,7 +48,7 @@ public class OrderRepositoryTest {
     void findByUserId_ValidOrderByUserId_ReturnsOrder() {
         // Given
         List<Order> orders = Collections.singletonList(createTestOrder(EXISTING_ORDER_ID));
-        Page<Order> expectedOrdersPage = new PageImpl<Order>(orders, ORDER_PAGEABLE, orders.size());
+        Page<Order> expectedOrdersPage = new PageImpl<>(orders, ORDER_PAGEABLE, orders.size());
 
         // When
         Page<Order> actualOrdersPage = orderRepository.findByUserId(
