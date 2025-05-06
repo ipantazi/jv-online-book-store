@@ -26,7 +26,8 @@ public interface OrderMapper {
     @AfterMapping
     default void setTotal(@MappingTarget Order order, ShoppingCart shoppingCart) {
         order.setTotal(shoppingCart.getCartItems().stream()
-                .map(cartItem -> cartItem.getBook().getPrice())
+                .map(cartItem -> BigDecimal.valueOf(cartItem.getQuantity())
+                        .multiply(cartItem.getBook().getPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 

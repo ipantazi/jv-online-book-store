@@ -1,6 +1,6 @@
 package onlinebookstore.service.book;
 
-import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCash;
+import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCache;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +81,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Page<BookDtoWithoutCategoryIds> getByCategoryId(Long categoryId, Pageable pageable) {
-        if (!categoriesCash.containsKey(categoryId)) {
+        if (!categoriesCache.containsKey(categoryId)) {
             throw new EntityNotFoundException("Can't get books with category ID: " + categoryId);
         }
         return bookRepository.findAllByCategoryId(categoryId, pageable)

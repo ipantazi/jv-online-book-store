@@ -7,6 +7,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 public class MockMvcUtil {
+    private MockMvcUtil() {
+    }
+
     public static MockMvc buildMockMvc(WebApplicationContext applicationContext) {
         return MockMvcBuilders
                 .webAppContextSetup(applicationContext)

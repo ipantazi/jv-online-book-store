@@ -1,33 +1,21 @@
 package onlinebookstore.util.assertions;
 
-import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCash;
+import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCache;
+import static onlinebookstore.util.TestDataUtil.CATEGORY_IGNORING_FIELD;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-import onlinebookstore.dto.category.CategoryDto;
 import onlinebookstore.model.Category;
 
 public class CategoryAssertionsUtil extends TestAssertionsUtil {
-    public static void assertListCategoryDtosAreEqual(List<CategoryDto> expected,
-                                                List<CategoryDto> actual) {
-        assertThat(actual).isNotNull();
-        assertThat(actual.size()).isEqualTo(expected.size());
-        assertThat(actual)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id")
-                .containsExactlyInAnyOrderElementsOf(expected);
-    }
-
-    public static void assertCategoryDtosAreEqual(Object expected, Object actual) {
-        assertThat(actual).isNotNull();
-        assertThat(actual)
-                .usingRecursiveComparison()
-                .ignoringFields("id")
-                .isEqualTo(expected);
+    private CategoryAssertionsUtil() {
     }
 
     public static void assertAddingCategoriesCash(Category actual, int expectedSize) {
-        assertThat(categoriesCash).hasSize(expectedSize);
-        assertThat(categoriesCash).containsKey(actual.getId());
-        assertCategoryDtosAreEqual(actual, categoriesCash.get(actual.getId()));
+        assertThat(categoriesCache).hasSize(expectedSize);
+        assertThat(categoriesCache).containsKey(actual.getId());
+        assertObjectsAreEqualIgnoringFields(
+                actual,
+                categoriesCache.get(actual.getId()),
+                CATEGORY_IGNORING_FIELD);
     }
 }

@@ -36,8 +36,10 @@ public class BookSpecificationProviderManagerTest {
     @Test
     @DisplayName("Verify getSpecificationProviders() method works.")
     public void getSpecificationProviders_ValidKey_ReturnsSpecificationProviders() {
+        // When
         SpecificationProvider<Book> actual = manager.getSpecificationProvider(KEY_TITLE);
 
+        // Then
         assertThat(actual).isNotNull();
         assertThat(actual.getKey()).isEqualTo(KEY_TITLE);
         assertThat(actual).isEqualTo(expectedProvider);
@@ -47,10 +49,12 @@ public class BookSpecificationProviderManagerTest {
     @Test
     @DisplayName("Verify that an exception is throw when sort key is invalid.")
     public void getSpecificationProviders_InvalidKey_ThrowsException() {
+        // When
         assertThatThrownBy(() -> manager.getSpecificationProvider(INVALID_KEY))
                 .isInstanceOf(DataProcessingException.class)
                 .hasMessage("Can't find correct specification provider for key: " + INVALID_KEY);
 
+        // Then
         verify(expectedProvider, times(1)).getKey();
     }
 }

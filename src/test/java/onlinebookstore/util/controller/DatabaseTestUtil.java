@@ -7,6 +7,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 
 public class DatabaseTestUtil {
+    private DatabaseTestUtil() {
+    }
+
     public static void executeSqlScript(DataSource dataSource, String... scripts) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(true);

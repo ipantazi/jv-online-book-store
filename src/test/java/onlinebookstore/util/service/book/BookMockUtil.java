@@ -1,6 +1,6 @@
 package onlinebookstore.util.service.book;
 
-import static onlinebookstore.util.TestDataUtil.convertCategoryIdsToCategories;
+import static onlinebookstore.util.TestDataUtil.convertToCategorySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doAnswer;
 
@@ -11,7 +11,10 @@ import onlinebookstore.mapper.BookMapper;
 import onlinebookstore.model.Book;
 import onlinebookstore.model.Category;
 
-public class BookMapperMockUtil {
+public class BookMockUtil {
+    private BookMockUtil() {
+    }
+
     public static void mockBookMapperUpdateBookEntity(BookMapper bookMapper,
                                                       CreateBookRequestDto createBookRequestDto,
                                                       Book book) {
@@ -43,7 +46,7 @@ public class BookMapperMockUtil {
         entity.setDescription(dto.description());
         entity.setCoverImage(dto.coverImage());
         Set<Long> categoryIds = dto.categoryIds();
-        Set<Category> convertedCategories = convertCategoryIdsToCategories(categoryIds);
+        Set<Category> convertedCategories = convertToCategorySet(categoryIds);
         entity.setCategories(convertedCategories);
     }
 

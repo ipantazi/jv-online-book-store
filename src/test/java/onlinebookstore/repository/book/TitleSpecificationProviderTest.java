@@ -52,14 +52,17 @@ public class TitleSpecificationProviderTest {
     @Test
     @DisplayName("Verify getSpecification() returns correct predicate")
     public void getSpecification_ValidParams_ReturnsCorrectSpecification() {
+        // Given
         Predicate expectedPredicate = mock(Predicate.class);
         when(root.<String>get(KEY_TITLE)).thenReturn(path);
         when(criteriaBuilder.lower(path)).thenReturn(expression);
         when(criteriaBuilder.like(expression, "%" + VALUE_FOR_SEARCH.toLowerCase() + "%"))
                 .thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(VALUE_FOR_SEARCH);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -73,8 +76,10 @@ public class TitleSpecificationProviderTest {
     @Test
     @DisplayName("Verify that the method returns empty specification for non-string parameters.")
     public void getSpecification_NonStringParams_ReturnsSpecificationWhereNull() {
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(BigDecimal.ONE);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         assertThat(actualSpecification).isEqualTo(Specification.where(null));
         verifyNoInteractions(criteriaBuilder, root);
@@ -83,8 +88,10 @@ public class TitleSpecificationProviderTest {
     @Test
     @DisplayName("Verify that the method returns empty specification for null parameters")
     public void getSpecification_NulParams_ReturnsSpecificationWhereNull() {
+        // When
         Specification<Book> actualSpecification = provider.getSpecification(null);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         assertThat(actualSpecification).isEqualTo(Specification.where(null));
         verifyNoInteractions(criteriaBuilder, root);
@@ -93,8 +100,10 @@ public class TitleSpecificationProviderTest {
     @Test
     @DisplayName("Verify that the method returns empty specification for blank parameters.")
     public void getSpecification_BlankParams_ReturnsSpecificationWhereNull() {
+        // When
         Specification<Book> actualSpecification = provider.getSpecification("");
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         assertThat(actualSpecification.toPredicate(root, query, criteriaBuilder)).isNull();
     }

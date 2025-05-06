@@ -7,10 +7,13 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class MvcTestHelper {
+    private MvcTestHelper() {
+    }
+
     public static MvcResult createJsonMvcResult(MockMvc mockMvc,
-                                          MockHttpServletRequestBuilder requestBuilder,
-                                          ResultMatcher expectedStatus,
-                                          String jsonRequest) throws Exception {
+                                                MockHttpServletRequestBuilder requestBuilder,
+                                                ResultMatcher expectedStatus,
+                                                String jsonRequest) throws Exception {
         return mockMvc.perform(requestBuilder
                         .content(jsonRequest)
                         .contentType(MediaType.APPLICATION_JSON))

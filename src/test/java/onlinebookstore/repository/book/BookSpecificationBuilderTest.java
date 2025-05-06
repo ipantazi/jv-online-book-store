@@ -44,6 +44,7 @@ public class BookSpecificationBuilderTest {
     @Test
     @DisplayName("Verify the build() method works with search by author.")
     public void build_SearchByTitle_ReturnsBookSpecification() {
+        // Given
         String key = "title";
         String value = "TEST title";
         BookSearchParametersDto params = new BookSearchParametersDto(
@@ -59,8 +60,10 @@ public class BookSpecificationBuilderTest {
         when(specificationProvider.getSpecification(value)).thenReturn(expectedSpecification);
         when(criteriaBuilder.equal(root.get(key), value)).thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = builder.build(params);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -73,6 +76,7 @@ public class BookSpecificationBuilderTest {
     @Test
     @DisplayName("Verify the build() method works with search by author.")
     public void build_SearchByAuthor_ReturnsBookSpecification() {
+        // Given
         String key = "author";
         String value = "TEST author";
         BookSearchParametersDto params = new BookSearchParametersDto(
@@ -88,8 +92,10 @@ public class BookSpecificationBuilderTest {
         when(specificationProvider.getSpecification(value)).thenReturn(expectedSpecification);
         when(criteriaBuilder.equal(root.get(key), value)).thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = builder.build(params);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -102,6 +108,7 @@ public class BookSpecificationBuilderTest {
     @Test
     @DisplayName("Verify the build() method works with search by author.")
     public void build_SearchByIsbn_ReturnsBookSpecification() {
+        // Given
         String key = "isbn";
         String value = "1111111111111";
         BookSearchParametersDto params = new BookSearchParametersDto(
@@ -117,8 +124,10 @@ public class BookSpecificationBuilderTest {
         when(specificationProvider.getSpecification(value)).thenReturn(expectedSpecification);
         when(criteriaBuilder.equal(root.get(key), value)).thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = builder.build(params);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -131,6 +140,7 @@ public class BookSpecificationBuilderTest {
     @Test
     @DisplayName("Verify the build() method works with search by author.")
     public void build_SearchByTwoPrice_ReturnsBookSpecification() {
+        // Given
         String key = "price";
         List<BigDecimal> value = List.of(new BigDecimal("100"), new BigDecimal("200"));
         BookSearchParametersDto params = new BookSearchParametersDto(
@@ -146,8 +156,10 @@ public class BookSpecificationBuilderTest {
         when(specificationProvider.getSpecification(value)).thenReturn(expectedSpecification);
         when(criteriaBuilder.equal(root.get(key), value)).thenReturn(expectedPredicate);
 
+        // When
         Specification<Book> actualSpecification = builder.build(params);
 
+        // Then
         assertThat(actualSpecification).isNotNull();
         Predicate actualPredicate = actualSpecification.toPredicate(root, query, criteriaBuilder);
         assertThat(actualPredicate).isNotNull();
@@ -161,6 +173,7 @@ public class BookSpecificationBuilderTest {
     @DisplayName("Verify that the method returns empty specification."
             + "when a all parameters are null.")
     public void build_AllParamsNull_ReturnsEmptySpecification() {
+        // Given
         BookSearchParametersDto params = new BookSearchParametersDto(
                 null,
                 null,
@@ -168,8 +181,10 @@ public class BookSpecificationBuilderTest {
                 null
         );
 
+        // When
         Specification<Book> actual = builder.build(params);
 
+        // Then
         assertThat(actual).isEqualTo(Specification.where(null));
     }
 }

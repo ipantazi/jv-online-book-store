@@ -1,6 +1,6 @@
 package onlinebookstore.mapper;
 
-import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCash;
+import static onlinebookstore.service.category.CategoryServiceImpl.categoriesCache;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -33,10 +33,10 @@ public interface CategoryMapper {
     default Set<Category> mappingCategoriesIdToCategories(Set<Long> categoryIDs) {
         Set<Category> categories = new HashSet<>();
         for (Long id : categoryIDs) {
-            if (!categoriesCash.containsKey(id)) {
+            if (!categoriesCache.containsKey(id)) {
                 throw new EntityNotFoundException("Category with id " + id + " not found");
             }
-            categories.add(categoriesCash.get(id));
+            categories.add(categoriesCache.get(id));
         }
         return categories;
     }
