@@ -21,7 +21,7 @@ jobs:
         run: mvn --batch-mode --update-snapshots verify
 
       - name: Upload JaCoCo HTML report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jacoco-html-report
           path: target/site/jacoco/index.html
