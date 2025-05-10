@@ -96,5 +96,4 @@ public class CategoryController {
     ) {
         return bookService.getByCategoryId(id, pageable);
     }
-
 }
