@@ -2,43 +2,6 @@
 
 [![Java CI](https://github.com/ipantazi/jv-online-book-store/actions/workflows/ci.yml/badge.svg)](https://github.com/ipantazi/jv-online-book-store/actions/workflows/ci.yml)
 
-```mermaid
-graph TD
-   User -->|"POST /auth/register"| Registration
-   Registration -->|"POST /auth/login"| Auth
-   
-   BC[Book Controller]
-   Auth -->|"JWT"| BC
-   BC -->|"GET /books"| BooksCatalog
-   BC -->|"GET /books/{id}"| BookDetails
-   BC -->|"GET /books/search"| BookSearch
-   BC -->|"POST / PUT / DELETE"| BooksAdmin[(ROLE_ADMIN)]
-   
-   CC[Category Controller]
-   Auth -->|"JWT"| CC
-   CC -->|"GET /categories"| AllCategories
-   CC -->|"GET /categories/{id}"| CategoryDetails
-   CC -->|"GET /categories/{id}/books"| BooksByCategoryId
-   BooksCatalog -->|"GET /categories/{id}/books"| BooksByCategoryId
-   CC -->|"POST / PUT / DELETE"| CategoriesAdmin[(ROLE_ADMIN)]
-
-   SCC[Cart Controller]
-   SC["Shopping Cart"]
-   Auth -->|"JWT"| SCC
-   SCC -->|"GET /cart"| SC
-   SCC -->|"POST /cart/items"| SC
-   SCC -->|"PUT /cart/items/{itemId}"| SC
-   SCC -->|"DELETE /cart/items/{itemId}"| NoContent
-
-   OC[Order Controller]
-   Auth -->|"JWT"| OC
-   OC -->|"POST /orders"| Order
-   SC -->|"POST /orders"| Order
-   OC -->|"GET /orders"| Orders
-   OC -->|"GET /orders/{orderId}/items"| OrderItems
-   OC -->|"GET /orders/{orderId}/items/{itemId}"| OrderItemDetails
-   OC -->|"PUT /orders/{id}/status"| OrdersAdmin[(ROLE_ADMIN)]
-```
 ## 🚀 Introduction
 
 **JV Online Book Store** is a Spring Boot–based backend API for browsing and purchasing books.  
@@ -101,6 +64,44 @@ integration testing, and relational database interaction.
 - **GET** `/orders/{orderId}/items` – view all items in a specific order.
 - **GET** `/orders/{orderId}/items/{itemId}` – view a specific item in an order.
 - **PUT** `/orders/{id}/status` – change order status (ROLE_ADMIN).
+
+```mermaid
+graph TD
+   User -->|"POST /auth/register"| Registration
+   Registration -->|"POST /auth/login"| Auth
+   
+   BC[Book Controller]
+   Auth -->|"JWT"| BC
+   BC -->|"GET /books"| BooksCatalog
+   BC -->|"GET /books/{id}"| BookDetails
+   BC -->|"GET /books/search"| BookSearch
+   BC -->|"POST / PUT / DELETE"| BooksAdmin[(ROLE_ADMIN)]
+   
+   CC[Category Controller]
+   Auth -->|"JWT"| CC
+   CC -->|"GET /categories"| AllCategories
+   CC -->|"GET /categories/{id}"| CategoryDetails
+   CC -->|"GET /categories/{id}/books"| BooksByCategoryId
+   BooksCatalog -->|"GET /categories/{id}/books"| BooksByCategoryId
+   CC -->|"POST / PUT / DELETE"| CategoriesAdmin[(ROLE_ADMIN)]
+
+   SCC[Cart Controller]
+   SC["Shopping Cart"]
+   Auth -->|"JWT"| SCC
+   SCC -->|"GET /cart"| SC
+   SCC -->|"POST /cart/items"| SC
+   SCC -->|"PUT /cart/items/{itemId}"| SC
+   SCC -->|"DELETE /cart/items/{itemId}"| NoContent
+
+   OC[Order Controller]
+   Auth -->|"JWT"| OC
+   OC -->|"POST /orders"| Order
+   SC -->|"POST /orders"| Order
+   OC -->|"GET /orders"| Orders
+   OC -->|"GET /orders/{orderId}/items"| OrderItems
+   OC -->|"GET /orders/{orderId}/items/{itemId}"| OrderItemDetails
+   OC -->|"PUT /orders/{id}/status"| OrdersAdmin[(ROLE_ADMIN)]
+```
 
 ## 📦 Getting Started
 
